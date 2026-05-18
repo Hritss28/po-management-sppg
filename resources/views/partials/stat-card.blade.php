@@ -5,8 +5,8 @@
             <p class="mb-1 text-[10px] font-black uppercase tracking-widest text-slate-400">{{ $label }}</p>
             <p class="truncate text-xl font-black tracking-tight text-slate-900">{{ $value }}</p>
         </div>
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 text-xs font-black {{ $text ?? 'text-blue-600' }}">
-            {{ $initial ?? 'PO' }}
+        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-slate-50 {{ $text ?? 'text-blue-600' }}">
+            @include('partials.icon', ['name' => $icon ?? 'file-text', 'class' => 'h-5 w-5'])
         </div>
     </div>
 </div>

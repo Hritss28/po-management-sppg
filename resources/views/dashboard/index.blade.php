@@ -12,7 +12,7 @@
             [
                 'label' => 'TOTAL NILAI PEMBELANJAAN',
                 'value' => 'Rp '.number_format($stats['total_value'], 0, ',', '.'),
-                'icon' => 'C',
+                'icon' => 'cart',
                 'box' => 'bg-white text-slate-900 border-slate-200',
                 'iconBox' => 'bg-slate-50 text-slate-400',
                 'caption' => null,
@@ -20,7 +20,7 @@
             [
                 'label' => 'ESTIMASI BELUM TAGIH',
                 'value' => 'Rp '.number_format($stats['estimated_unbilled'], 0, ',', '.'),
-                'icon' => 'W',
+                'icon' => 'clock',
                 'box' => 'bg-white text-slate-900 border-slate-200',
                 'iconBox' => 'bg-amber-50 text-amber-500',
                 'caption' => null,
@@ -29,7 +29,7 @@
             [
                 'label' => 'TOTAL BELUM DIBAYAR',
                 'value' => 'Rp '.number_format($stats['unpaid'], 0, ',', '.'),
-                'icon' => '!',
+                'icon' => 'alert',
                 'box' => 'bg-rose-600 text-white border-rose-600 shadow-2xl shadow-rose-500/25',
                 'iconBox' => 'bg-white/20 text-white',
                 'caption' => 'INVOICE: Rp '.number_format($stats['invoice_unpaid'], 0, ',', '.').' / PIUTANG: Rp '.number_format($stats['debt_unpaid'], 0, ',', '.'),
@@ -38,7 +38,7 @@
             [
                 'label' => 'TOTAL CAIR (LUNAS)',
                 'value' => 'Rp '.number_format($stats['paid'], 0, ',', '.'),
-                'icon' => 'OK',
+                'icon' => 'check-circle',
                 'box' => 'bg-emerald-600 text-white border-emerald-600 shadow-2xl shadow-emerald-500/25',
                 'iconBox' => 'bg-white/20 text-white',
                 'caption' => 'INVOICE: Rp '.number_format($stats['invoice_paid'], 0, ',', '.').' / PIUTANG: Rp '.number_format($stats['debt_paid'], 0, ',', '.'),
@@ -75,8 +75,8 @@
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             @foreach ($financeCards as $card)
                 <article class="{{ $card['box'] }} min-h-40 rounded-3xl border p-6 shadow-md shadow-slate-200/70">
-                    <div class="{{ $card['iconBox'] }} mb-5 flex h-10 w-10 items-center justify-center rounded-xl text-[11px] font-black">
-                        {{ $card['icon'] }}
+                    <div class="{{ $card['iconBox'] }} mb-5 flex h-10 w-10 items-center justify-center rounded-xl">
+                        @include('partials.icon', ['name' => $card['icon'], 'class' => 'h-5 w-5'])
                     </div>
                     <p class="{{ $card['labelClass'] ?? 'text-slate-400' }} text-[10px] font-black uppercase tracking-[0.2em]">{{ $card['label'] }}</p>
                     <p class="mt-6 text-2xl font-black tracking-tight">{{ $card['value'] }}</p>
@@ -139,7 +139,9 @@
                         @endphp
                         <a href="{{ route('purchase-orders.show', $order['id']) }}" class="group flex gap-4">
                             <span class="relative flex flex-col items-center">
-                                <span class="{{ $tone }} flex h-10 w-10 items-center justify-center rounded-2xl text-xs font-black transition group-hover:scale-105">PO</span>
+                                <span class="{{ $tone }} flex h-10 w-10 items-center justify-center rounded-2xl transition group-hover:scale-105">
+                                    @include('partials.icon', ['name' => 'file-text', 'class' => 'h-5 w-5'])
+                                </span>
                                 @unless ($loop->last)
                                     <span class="mt-1 h-9 w-px bg-slate-100"></span>
                                 @endunless

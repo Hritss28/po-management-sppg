@@ -132,7 +132,9 @@
 
                     <div class="rounded-2xl bg-emerald-600 p-7 text-white shadow-2xl shadow-emerald-500/20">
                         <div class="flex items-center gap-4">
-                            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 text-xl font-black">OK</span>
+                            <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
+                                @include('partials.icon', ['name' => 'check-circle', 'class' => 'h-6 w-6'])
+                            </span>
                             <div>
                                 <p class="text-lg font-black uppercase">Siap Kirim</p>
                                 <p class="text-xs font-black text-emerald-100">Status PO akan berubah menjadi dikirim otomatis.</p>

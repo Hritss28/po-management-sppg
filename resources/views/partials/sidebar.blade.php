@@ -1,10 +1,10 @@
 @php
     $menu = [
-        ['label' => 'Dashboard', 'route' => 'dashboard', 'initial' => 'D'],
-        ['label' => 'Pesanan Pembelian (PO)', 'route' => 'purchase-orders.index', 'initial' => 'PO'],
-        ['label' => 'Surat Jalan', 'route' => 'surat-jalan.index', 'initial' => 'SJ'],
-        ['label' => 'Invoice', 'route' => 'invoices.index', 'initial' => 'INV'],
-        ['label' => 'Master Stok', 'route' => 'master-stok.index', 'initial' => 'MS'],
+        ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard'],
+        ['label' => 'Pesanan Pembelian (PO)', 'route' => 'purchase-orders.index', 'icon' => 'file-text'],
+        ['label' => 'Surat Jalan', 'route' => 'surat-jalan.index', 'icon' => 'box'],
+        ['label' => 'Invoice', 'route' => 'invoices.index', 'icon' => 'users'],
+        ['label' => 'Master Stok', 'route' => 'master-stok.index', 'icon' => 'database'],
     ];
 @endphp
 
@@ -19,7 +19,9 @@
             @foreach ($menu as $item)
                 @php($active = request()->routeIs($item['route']) || request()->routeIs(str_replace('.index', '.*', $item['route'])))
                 <a href="{{ route($item['route']) }}" class="{{ $active ? 'bg-blue-50 text-blue-700' : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800' }} flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm font-bold transition">
-                    <span class="{{ $active ? 'bg-blue-100' : 'bg-slate-100' }} flex shrink-0 h-7 w-8 items-center justify-center rounded-md text-[10px] font-black">{{ $item['initial'] }}</span>
+                    <span class="{{ $active ? 'bg-blue-100' : 'bg-slate-100' }} flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
+                        @include('partials.icon', ['name' => $item['icon'], 'class' => 'h-5 w-5'])
+                    </span>
                     <span class="truncate">{{ $item['label'] }}</span>
                 </a>
             @endforeach
