@@ -5,12 +5,21 @@ namespace Database\Seeders;
 use App\Models\Sppg;
 use App\Models\StockItem;
 use App\Models\Supplier;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
+        User::query()->updateOrCreate(
+            ['name' => 'admin'],
+            [
+                'email' => 'admin@supplier.local',
+                'password' => 'admin123',
+            ],
+        );
+
         Sppg::query()->updateOrCreate(
             ['code' => 'M1101'],
             [

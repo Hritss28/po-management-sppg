@@ -3,15 +3,17 @@
 namespace App\Http\Controllers;
 
 use App\Models\Sppg;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
 class AuthController extends Controller
 {
-    public function showLogin(): View|RedirectResponse
+    public function showLogin(Request $request): View|RedirectResponse
     {
-        if (session()->has('auth_user')) {
+        if ($request->session()->has('auth_user')) {
             return redirect()->route('dashboard');
         }
 
@@ -28,7 +30,9 @@ class AuthController extends Controller
                 'password' => ['required', 'string'],
             ]);
 
-            if ($credentials['username'] !== 'admin' || $credentials['password'] !== 'admin123') {
+            $admin = User::query()->where('name', $credentials['username'])->first();
+
+            if ($admin === null || ! Hash::check($credentials['password'], $admin->password)) {
                 return back()
                     ->withErrors(['username' => 'Username atau password admin tidak sesuai.'])
                     ->withInput(['mode' => 'admin', 'username' => $credentials['username']]);
@@ -37,8 +41,8 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $request->session()->put('auth_user', [
                 'role' => 'ADMIN',
-                'id' => 'admin',
-                'name' => 'Admin Supplier',
+                'id' => (string) $admin->id,
+                'name' => $admin->name,
             ]);
 
             return redirect()->route('dashboard');
