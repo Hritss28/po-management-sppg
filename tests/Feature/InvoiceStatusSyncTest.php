@@ -42,6 +42,25 @@ test('invoice status unpaid keeps purchase order as invoiced', function (): void
         ->and($order->refresh()->status)->toBe('INVOICED');
 });
 
+test('invoice create shows item unit beside quantity and price inputs', function (): void {
+    [$order] = invoiceStatusFixture('UNPAID');
+    $supplier = Supplier::query()->where('name', 'VIALA PANGAN')->firstOrFail();
+
+    $order->items()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'BAWANG MERAH',
+        'qty' => 12,
+        'unit' => 'KG',
+        'grade' => 'A',
+        'price' => 15000,
+    ]);
+
+    $this->get(route('invoices.create', ['id' => $order->id, 'supplier' => $supplier->name]))
+        ->assertOk()
+        ->assertSeeText('Qty Tagihan (KG)')
+        ->assertSeeText('Harga per KG');
+});
+
 /**
  * @return array{PurchaseOrder, Invoice}
  */

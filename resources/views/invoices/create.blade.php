@@ -43,6 +43,7 @@
                                 $itemIndex = $loop->index;
                                 $price = old("items.$itemIndex.price", $item['price'] > 0 ? $item['price'] : '');
                                 $qty = old("items.$itemIndex.qty", $item['qty']);
+                                $unit = strtoupper($item['unit']);
                             @endphp
                             <article class="grid grid-cols-1 gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5 md:grid-cols-[1fr_140px_180px_140px] md:items-center">
                                 <input type="hidden" name="items[{{ $loop->index }}][name]" value="{{ $item['name'] }}">
@@ -56,12 +57,15 @@
                                 </div>
 
                                 <label>
-                                    <span class="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">Qty Tagihan</span>
-                                    <input name="items[{{ $loop->index }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" class="invoice-qty w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                    <span class="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">Qty Tagihan ({{ $unit }})</span>
+                                    <div class="flex items-center rounded-lg border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
+                                        <input name="items[{{ $loop->index }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" class="invoice-qty min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
+                                        <span class="ml-3 shrink-0 rounded bg-slate-100 px-2 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">{{ $unit }}</span>
+                                    </div>
                                 </label>
 
                                 <label>
-                                    <span class="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">Harga Satuan</span>
+                                    <span class="mb-2 block text-[10px] font-black uppercase tracking-wider text-slate-400">Harga per {{ $unit }}</span>
                                     <div class="flex items-center rounded-lg border border-slate-200 bg-white px-4 py-3 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
                                         <span class="mr-2 text-xs font-black text-slate-400">Rp.</span>
                                         <input name="items[{{ $loop->index }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ $price }}" placeholder="Input Harga" class="invoice-price min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
