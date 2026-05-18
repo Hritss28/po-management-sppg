@@ -136,6 +136,52 @@ test('PurchaseOrderSupplier published edit rejects items without supplier', func
         ->and($order->items()->first()->supplier->name)->toBe('DUNIA BUMBU MOJOKERTO');
 });
 
+test('PurchaseOrderSupplier invoiced and completed purchase orders cannot be edited', function (string $status): void {
+    $data = purchaseOrderSupplierFixture();
+    $order = publishedPurchaseOrder($data, '22/PO/17052026/DBM/2026', [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'DUNIA BUMBU MOJOKERTO'],
+    ]);
+    $order->update(['status' => $status]);
+
+    $this->get(route('purchase-orders.edit', $order->id))
+        ->assertRedirect(route('purchase-orders.index'))
+        ->assertSessionHasErrors('purchase_order');
+
+    $this->patch(route('purchase-orders.update', $order->id), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'VIALA PANGAN'],
+    ]))
+        ->assertRedirect(route('purchase-orders.index'))
+        ->assertSessionHasErrors('purchase_order');
+
+    $this->patch(route('purchase-orders.suppliers.update', $order->id), [
+        'suppliers' => ['VIALA PANGAN'],
+    ])
+        ->assertRedirect(route('purchase-orders.index'))
+        ->assertSessionHasErrors('purchase_order');
+
+    expect($order->refresh()->number)->toBe('22/PO/17052026/DBM/2026')
+        ->and($order->status)->toBe($status)
+        ->and($order->items()->first()->supplier->name)->toBe('DUNIA BUMBU MOJOKERTO');
+})->with(['COMPLETED', 'INVOICED']);
+
+test('PurchaseOrderSupplier locked purchase orders hide edit controls', function (): void {
+    $data = purchaseOrderSupplierFixture();
+    $order = publishedPurchaseOrder($data, '22/PO/17052026/DBM/2026', [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'DUNIA BUMBU MOJOKERTO'],
+    ]);
+    $order->update(['status' => 'INVOICED']);
+
+    $this->get(route('purchase-orders.index'))
+        ->assertOk()
+        ->assertDontSee(route('purchase-orders.edit', $order->id), false);
+
+    $this->get(route('purchase-orders.show', $order->id))
+        ->assertOk()
+        ->assertDontSee('name="suppliers[]"', false)
+        ->assertDontSee('Simpan Sekarang')
+        ->assertDontSee('Simpan Penugasan', false);
+});
+
 /**
  * @return array{sppg: Sppg, stocks: array<string, StockItem>, suppliers: array<string, Supplier>}
  */

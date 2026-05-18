@@ -120,9 +120,14 @@ class PurchaseOrderController extends Controller
 
         $this->authorizeAdmin();
 
+        $order = $this->findOrderModel($id);
+        if ($this->isPurchaseOrderLocked($order)) {
+            return $this->redirectLockedPurchaseOrder();
+        }
+
         return view('purchase-orders.edit', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrderArray($id),
+            'order' => $this->orderToArray($order),
             'stockItems' => $this->stockItems(),
             'suppliers' => $this->suppliers(),
             'sppgs' => Sppg::query()->orderBy('name')->get(),
@@ -136,8 +141,12 @@ class PurchaseOrderController extends Controller
         }
 
         $this->authorizeAdmin();
-        $validated = $this->validatePurchaseOrder($request);
         $order = $this->findOrderModel($id);
+        if ($this->isPurchaseOrderLocked($order)) {
+            return $this->redirectLockedPurchaseOrder();
+        }
+
+        $validated = $this->validatePurchaseOrder($request);
 
         DB::transaction(function () use ($order, $validated): void {
             $sppg = $this->sppgForRequest($validated['sppg_code'] ?? null);
@@ -185,11 +194,15 @@ class PurchaseOrderController extends Controller
         }
 
         $this->authorizeAdmin();
+        $order = $this->findOrderModel($id);
+        if ($this->isPurchaseOrderLocked($order)) {
+            return $this->redirectLockedPurchaseOrder();
+        }
+
         $validated = $request->validate([
             'suppliers' => ['required', 'array'],
             'suppliers.*' => ['nullable', 'exists:suppliers,name'],
         ]);
-        $order = $this->findOrderModel($id);
         $splitCount = 0;
 
         DB::transaction(function () use ($order, $validated, &$splitCount): void {
@@ -237,5 +250,17 @@ class PurchaseOrderController extends Controller
             'order' => $this->findOrderArray($id),
             'suppliers' => $this->suppliers(),
         ]);
+    }
+
+    private function isPurchaseOrderLocked(PurchaseOrder $order): bool
+    {
+        return in_array($order->status, ['COMPLETED', 'INVOICED'], true);
+    }
+
+    private function redirectLockedPurchaseOrder(): RedirectResponse
+    {
+        return redirect()
+            ->route('purchase-orders.index')
+            ->withErrors(['purchase_order' => 'PO yang sudah tertagih atau selesai tidak bisa diedit.']);
     }
 }

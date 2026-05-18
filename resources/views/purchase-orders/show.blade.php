@@ -5,6 +5,7 @@
         $total = collect($order['items'])->sum(fn ($item) => $item['qty'] * $item['price']);
         $invoiceTotal = collect($order['invoices'] ?? [])->sum('total_amount');
         $dropSchedule = $order['droping_date'] ? $order['droping_date'].' '.$order['droping_time'] : '-';
+        $isLocked = in_array($order['status'], ['COMPLETED', 'INVOICED'], true);
     @endphp
 
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-5 backdrop-blur-sm">
@@ -18,7 +19,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-4">
-                    @if ($currentUser['role'] === 'ADMIN' && ! $order['number'])
+                    @if ($currentUser['role'] === 'ADMIN' && ! $isLocked && ! $order['number'])
                         <button type="submit" form="supplier-assignment-form" class="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20">
                             Simpan Penugasan &amp; Terbitkan No. PO
                         </button>
@@ -92,14 +93,14 @@
                         <h2 class="text-sm font-black uppercase tracking-[0.18em] text-blue-600">♢ Penugasan Supplier & Daftar Barang</h2>
                     </div>
                     <div class="overflow-x-auto">
-                        <table class="min-w-[880px] divide-y divide-slate-100">
+                        <table class="w-full min-w-[880px] table-fixed divide-y divide-slate-100">
                             <thead class="bg-slate-50">
                                 <tr>
-                                    <th class="px-7 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Barang & Grade</th>
-                                    <th class="px-7 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
-                                    <th class="px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Qty</th>
-                                    <th class="px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Harga</th>
-                                    <th class="px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subtotal</th>
+                                    <th class="w-[28%] px-7 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Barang & Grade</th>
+                                    <th class="w-[32%] px-7 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
+                                    <th class="w-[12%] px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Qty</th>
+                                    <th class="w-[14%] px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Harga</th>
+                                    <th class="w-[14%] px-7 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Subtotal</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100">
@@ -113,14 +114,14 @@
                                             <span class="mt-2 inline-flex rounded bg-emerald-50 px-2 py-1 text-xs font-black text-emerald-600">{{ $item['grade'] }}</span>
                                         </td>
                                         <td class="px-7 py-6">
-                                            @if ($currentUser['role'] === 'ADMIN')
-                                                <select name="suppliers[]" class="min-w-72 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-black uppercase text-blue-600 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                            @if ($currentUser['role'] === 'ADMIN' && ! $isLocked)
+                                                <select name="suppliers[]" class="w-full rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-black uppercase text-blue-600 outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                                                     @foreach ($suppliers as $supplier)
                                                         <option value="{{ $supplier }}" @selected($item['supplier'] === $supplier)>{{ $supplier }}</option>
                                                     @endforeach
                                                 </select>
                                             @else
-                                                <span class="inline-flex min-w-72 rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-black uppercase text-blue-600">{{ $item['supplier'] }}</span>
+                                                <span class="inline-flex w-full rounded-lg border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-black uppercase text-blue-600">{{ $item['supplier'] }}</span>
                                             @endif
                                         </td>
                                         <td class="px-7 py-6 text-right text-base font-black text-slate-700">{{ $item['qty'] }} <span class="text-xs uppercase text-slate-400">{{ $item['unit'] }}</span></td>
@@ -132,12 +133,12 @@
                         </table>
                     </div>
                 </section>
-                @if ($currentUser['role'] === 'ADMIN' && ! $order['number'])
+                @if ($currentUser['role'] === 'ADMIN' && ! $isLocked && ! $order['number'])
                     <div class="sticky bottom-0 -mx-9 -mb-6 flex items-center justify-between border-t border-amber-200 bg-amber-50 px-9 py-4 text-xs font-black uppercase tracking-[0.18em] text-amber-700">
                         <span>⚠ Tentukan supplier untuk semua item agar nomor PO diterbitkan dan status berubah ke PROCESSING.</span>
                         <button type="submit" class="underline underline-offset-4">Simpan & Terbitkan</button>
                     </div>
-                @elseif ($currentUser['role'] === 'ADMIN')
+                @elseif ($currentUser['role'] === 'ADMIN' && ! $isLocked)
                     <div class="sticky bottom-0 -mx-9 -mb-6 flex items-center justify-between border-t border-emerald-100 bg-emerald-50 px-9 py-4 text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
                         <span>Terdapat perubahan penugasan supplier yang bisa disimpan.</span>
                         <button type="submit" class="underline underline-offset-4">Simpan Sekarang</button>
