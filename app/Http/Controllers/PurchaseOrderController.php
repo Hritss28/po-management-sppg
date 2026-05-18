@@ -91,11 +91,12 @@ class PurchaseOrderController extends Controller
             ]);
 
             $this->syncPurchaseOrderItems($order, $validated['items']);
+            $this->publishOrResplitPurchaseOrder($order->refresh());
 
             return $order;
         });
 
-        return redirect()->route('purchase-orders.show', $order->id)->with('success', 'PO berhasil dibuat. Silakan tentukan supplier untuk menerbitkan nomor PO.');
+        return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil dibuat.');
     }
 
     public function show(string $id): View|RedirectResponse

@@ -25,6 +25,20 @@ afterEach(function (): void {
     Carbon::setTestNow();
 });
 
+test('PurchaseOrderSupplier store publishes a number when supplier is entered during create', function (): void {
+    $data = purchaseOrderSupplierFixture();
+
+    $this->post(route('purchase-orders.store'), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'VIALA PANGAN'],
+    ]))->assertRedirect(route('purchase-orders.index'));
+
+    $order = PurchaseOrder::query()->firstOrFail();
+
+    expect($order->number)->toBe($order->id.'/PO/18052026/VP/2026')
+        ->and($order->status)->toBe('PROCESSING')
+        ->and($order->items()->first()->supplier->name)->toBe('VIALA PANGAN');
+});
+
 test('PurchaseOrderSupplier draft edit publishes a number when every item has supplier', function (): void {
     $data = purchaseOrderSupplierFixture();
     $order = draftPurchaseOrder($data);

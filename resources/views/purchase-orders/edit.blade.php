@@ -11,7 +11,7 @@
                     <h1 class="text-2xl font-black tracking-tight text-slate-950">Edit PO</h1>
                 </div>
                 <div class="flex items-center gap-8">
-                    <a href="{{ route('purchase-orders.show', $order['id']) }}" class="text-sm font-black text-slate-700">Batal</a>
+                    <a href="{{ route('purchase-orders.index') }}" class="text-sm font-black text-slate-700">Batal</a>
                     <button type="submit" class="rounded-lg bg-blue-600 px-8 py-3 text-base font-black text-white shadow-lg shadow-blue-600/25">Simpan PO</button>
                 </div>
             </header>
