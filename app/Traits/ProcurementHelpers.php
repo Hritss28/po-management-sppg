@@ -119,6 +119,8 @@ trait ProcurementHelpers
             'created_by' => $order->created_by,
             'sppg' => $order->sppg->name,
             'sppg_code' => $order->sppg->code,
+            'sppg_location' => $order->sppg->location,
+            'sppg_whatsapp' => $order->sppg->whatsapp,
             'droping_date' => $order->droping_date?->format('Y-m-d'),
             'droping_time' => $order->droping_time ? substr((string) $order->droping_time, 0, 5) : null,
             'status' => $order->status,

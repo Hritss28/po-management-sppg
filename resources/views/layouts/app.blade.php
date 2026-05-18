@@ -7,7 +7,7 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-slate-100 font-sans text-slate-800 antialiased">
-        <div class="flex min-h-screen overflow-hidden">
+        <div class="flex h-screen overflow-hidden">
             @include('partials.sidebar', ['currentUser' => $currentUser])
 
             <div class="flex min-w-0 flex-1 flex-col">

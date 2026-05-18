@@ -8,11 +8,32 @@
         <style>
             @page {
                 size: A4;
-                margin: 12mm;
+                margin: 5mm;
+            }
+            @media print {
+                body {
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
+                }
+                .page-break-avoid {
+                    page-break-inside: avoid;
+                }
+                .print-grid-2 {
+                    display: grid !important;
+                    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+                }
+                .print-flex-row {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    justify-content: space-between !important;
+                }
+                .print-w-72 {
+                    width: 18rem !important; /* setara dengan w-72 di tailwind */
+                }
             }
         </style>
     </head>
-    <body class="bg-slate-100 font-sans text-slate-900 antialiased print:bg-white">
+    <body class="bg-slate-100 font-sans text-slate-900 antialiased print:bg-white print:text-xs">
         @php
             $total = $items->sum(fn ($item) => $item['qty'] * $item['price']);
             $theme = $supplier['theme'];
@@ -25,121 +46,128 @@
                 <h1 class="text-xl font-black tracking-tight text-slate-900">Invoice Preview</h1>
             </div>
             <div class="flex items-center gap-3">
-                <button type="button" onclick="window.print()" class="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm">Print</button>
-                <button type="button" onclick="window.print()" class="rounded-lg bg-red-600 px-5 py-3 text-sm font-black text-white shadow-sm shadow-red-600/20">Download PDF</button>
+                <button type="button" onclick="window.print()" class="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 shadow-sm transition hover:bg-slate-50">Print / Download PDF</button>
             </div>
         </header>
 
-        <main class="mx-auto max-w-[800px] px-4 py-9 print:max-w-none print:p-0">
-            <article class="bg-white p-12 shadow-2xl shadow-slate-300/60 print:p-0 print:shadow-none">
-                <section class="flex items-start justify-between gap-8">
+        <main class="mx-auto max-w-[800px] px-4 py-8 print:max-w-none print:p-0">
+            <article class="bg-white p-12 shadow-2xl shadow-slate-300/60 print:px-4 print:py-0 print:shadow-none">
+                <!-- Header Info -->
+                <section class="flex items-start justify-between gap-8 page-break-avoid">
                     <div>
-                        <img src="{{ asset($supplier['logo']) }}" alt="{{ $supplier['name'] }}" class="mb-6 h-16 w-16 object-contain">
-                        <h2 class="text-2xl font-black uppercase tracking-tight text-slate-950">{{ $supplier['name'] }}</h2>
-                        <p class="mt-2 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Distribusi tepat. Pangan berkualitas.</p>
-                        <p class="mt-2 text-sm font-medium text-slate-500">{{ $supplier['address'] }}</p>
+                        <img src="{{ asset($supplier['logo']) }}" alt="{{ $supplier['name'] }}" class="mb-4 h-16 w-16 object-contain print:mb-2 print:h-12 print:w-12">
+                        <h2 class="text-xl font-black uppercase tracking-tight text-slate-950 print:text-lg">{{ $supplier['name'] }}</h2>
+                        <p class="mt-1 text-[10px] font-black uppercase tracking-[0.16em] text-slate-400">Distribusi tepat. Pangan berkualitas.</p>
+                        <p class="mt-2 text-xs font-medium text-slate-500 print:mt-1">{{ $supplier['address'] }}</p>
                     </div>
                     <div class="text-right">
-                        <p class="font-serif text-5xl font-black italic tracking-tight text-slate-950">INVOICE</p>
-                        <span class="mt-6 inline-flex rounded-full px-5 py-2 text-[10px] font-black uppercase tracking-wider text-white" style="background-color: {{ $isPaid ? '#10b981' : $theme }}">
+                        <p class="font-serif text-4xl font-black italic tracking-tight text-slate-950 print:text-3xl">INVOICE</p>
+                        <span class="mt-4 inline-flex rounded-full px-5 py-1.5 text-[9px] font-black uppercase tracking-wider text-white" style="background-color: {{ $isPaid ? '#10b981' : $theme }}">
                             {{ $isPaid ? 'Lunas' : 'Belum Bayar' }}
                         </span>
-                        <p class="mt-4 text-sm font-black uppercase tracking-wider text-slate-950">{{ $invoice['number'] }}</p>
+                        <p class="mt-3 text-xs font-black uppercase tracking-wider text-slate-950">{{ $invoice['number'] }}</p>
                     </div>
                 </section>
 
-                <div class="mt-9 border-t-2" style="border-color: {{ $theme }}"></div>
+                <div class="mt-6 border-t-2 print:mt-2" style="border-color: {{ $theme }}"></div>
 
-                <section class="mt-8 grid grid-cols-1 gap-8 md:grid-cols-2">
-                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-6" style="border-left: 4px solid {{ $theme }}">
-                        <p class="mb-5 text-xs font-black uppercase tracking-[0.18em]" style="color: {{ $theme }}">Invoice To</p>
-                        <p class="text-lg font-black uppercase text-slate-900">{{ $order['sppg'] }}</p>
-                        <p class="mt-2 text-sm font-medium text-slate-500">Surabaya</p>
-                        <p class="mt-1 text-sm font-medium text-slate-500">08922222</p>
+                <!-- Info Customer & Invoice Details -->
+                <section class="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 print-grid-2 print:mt-2 print:gap-4">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-5" style="border-left: 4px solid {{ $theme }}">
+                        <p class="mb-3 text-[9px] font-black uppercase tracking-[0.18em]" style="color: {{ $theme }}">Invoice To</p>
+                        <p class="text-base font-black uppercase text-slate-900">{{ $order['sppg'] }}</p>
+                        <p class="mt-1 text-[10px] font-medium text-slate-500">{{ $order['sppg_location'] ?? 'Mojokerto' }}</p>
+                        <p class="mt-0.5 text-[10px] font-medium text-slate-500">{{ $order['sppg_whatsapp'] ?? '-' }}</p>
                     </div>
-                    <div class="space-y-4 text-sm">
-                        <div class="flex justify-between border-b border-slate-200 pb-3">
+                    <div class="space-y-3 text-xs print:text-[10px]">
+                        <div class="flex justify-between border-b border-slate-200 pb-2">
                             <span class="text-slate-500">Invoice No</span>
                             <span class="font-black text-slate-950">{{ $invoice['number'] }}</span>
                         </div>
-                        <div class="flex justify-between border-b border-slate-200 pb-3">
+                        <div class="flex justify-between border-b border-slate-200 pb-2">
                             <span class="text-slate-500">Transaction</span>
-                            <span class="text-right font-black" style="color: {{ $theme }}">Tagihan Pengadaan Barang<br><span class="text-xs text-slate-500">(PO: {{ $order['number'] }})</span></span>
+                            <span class="text-right font-black" style="color: {{ $theme }}">Tagihan Pengadaan Barang<br><span class="text-[10px] text-slate-500">(PO: {{ $order['number'] }})</span></span>
                         </div>
-                        <div class="flex justify-between border-b border-slate-200 pb-3">
+                        <div class="flex justify-between border-b border-slate-200 pb-2">
                             <span class="text-slate-500">Date</span>
                             <span class="font-black text-slate-950">{{ date('n/j/Y', strtotime($invoice['date'])) }}</span>
                         </div>
                     </div>
                 </section>
 
-                <section class="mt-8 overflow-hidden rounded-lg border border-slate-200">
+                <!-- Tabel Item -->
+                <section class="mt-6 overflow-hidden rounded-lg border border-slate-200 print:mt-3">
                     <table class="w-full table-fixed">
-                        <thead class="text-white" style="background-color: {{ $theme }}">
+                        <thead class="text-white print:text-slate-900" style="background-color: {{ $theme }};">
                             <tr>
-                                <th class="w-14 px-4 py-4 text-left text-[10px] font-black uppercase tracking-wider">No</th>
-                                <th class="px-4 py-4 text-left text-[10px] font-black uppercase tracking-wider">Description</th>
-                                <th class="w-20 px-4 py-4 text-center text-[10px] font-black uppercase tracking-wider">Unit</th>
-                                <th class="w-20 px-4 py-4 text-center text-[10px] font-black uppercase tracking-wider">Qty</th>
-                                <th class="w-28 px-4 py-4 text-right text-[10px] font-black uppercase tracking-wider">Price</th>
-                                <th class="w-32 px-4 py-4 text-right text-[10px] font-black uppercase tracking-wider">Total</th>
+                                <th class="w-12 px-3 py-3 text-left text-[8px] font-black uppercase tracking-wider print:text-white">No</th>
+                                <th class="px-3 py-3 text-left text-[8px] font-black uppercase tracking-wider print:text-white">Description</th>
+                                <th class="w-16 px-3 py-3 text-center text-[8px] font-black uppercase tracking-wider print:text-white">Unit</th>
+                                <th class="w-16 px-3 py-3 text-center text-[8px] font-black uppercase tracking-wider print:text-white">Qty</th>
+                                <th class="w-28 px-3 py-3 text-right text-[8px] font-black uppercase tracking-wider print:text-white">Price</th>
+                                <th class="w-32 px-3 py-3 text-right text-[8px] font-black uppercase tracking-wider print:text-white">Total</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200 bg-slate-50">
+                        <tbody class="divide-y divide-slate-200 bg-slate-50 print:bg-white">
                             @foreach ($items as $item)
                                 <tr>
-                                    <td class="px-4 py-4 text-center text-sm text-slate-500">{{ $loop->iteration }}</td>
-                                    <td class="px-4 py-4 text-sm font-black text-slate-950">
+                                    <td class="px-3 py-3 text-center text-[10px] text-slate-500">{{ $loop->iteration }}</td>
+                                    <td class="px-3 py-3 text-[10px] font-black text-slate-950">
                                         {{ $item['name'] }}
-                                        <p class="mt-1 text-[10px] font-black uppercase text-slate-400">PO Ref: {{ $order['number'] }}</p>
+                                        <p class="mt-0.5 text-[8px] font-black uppercase text-slate-400">PO Ref: {{ $order['number'] }}</p>
                                     </td>
-                                    <td class="px-4 py-4 text-center text-sm text-slate-600">{{ $item['unit'] }}</td>
-                                    <td class="px-4 py-4 text-center text-sm font-black">{{ $item['qty'] }}</td>
-                                    <td class="px-4 py-4 text-right text-sm text-slate-600">Rp {{ number_format($item['price'], 0, ',', '.') }}</td>
-                                    <td class="px-4 py-4 text-right text-sm font-black text-slate-950">Rp {{ number_format($item['qty'] * $item['price'], 0, ',', '.') }}</td>
+                                    <td class="px-3 py-3 text-center text-[10px] text-slate-600">{{ $item['unit'] }}</td>
+                                    <td class="px-3 py-3 text-center text-[10px] font-black">{{ $item['qty'] }}</td>
+                                    <td class="px-3 py-3 text-right text-[10px] text-slate-600">Rp {{ number_format($item['price'], 0, ',', '.') }}</td>
+                                    <td class="px-3 py-3 text-right text-[10px] font-black text-slate-950">Rp {{ number_format($item['qty'] * $item['price'], 0, ',', '.') }}</td>
                                 </tr>
                             @endforeach
                         </tbody>
                     </table>
                 </section>
 
-                <section class="ml-auto mt-8 max-w-sm space-y-5">
-                    <div class="flex justify-between text-lg">
-                        <span class="text-slate-700">Sub Total</span>
-                        <span class="font-black">Rp {{ number_format($total, 0, ',', '.') }}</span>
-                    </div>
-                    <div class="flex items-center justify-between rounded-lg px-5 py-4 text-white" style="background-color: {{ $theme }}">
-                        <span class="text-xs font-black uppercase tracking-[0.18em]">Total Amount</span>
-                        <span class="text-2xl font-black">Rp {{ number_format($total, 0, ',', '.') }}</span>
-                    </div>
-                    <p class="text-right text-xs font-bold italic" style="color: {{ $theme }}">* Harga tidak menggunakan PPN</p>
-                </section>
-
-                <section class="mt-10 rounded-xl border border-slate-200 bg-slate-50 p-7">
-                    <h3 class="text-lg font-black text-slate-900">Payment Information</h3>
-                    <div class="mt-6 max-w-xs overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                        <div class="border-b border-slate-200 p-4">
-                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Account Holder</p>
-                            <p class="mt-1 text-sm font-black">ARIF RAKHMAN HADI</p>
+                <!-- Subtotal & Total -->
+                <section class="mt-8 flex justify-end print:mt-3">
+                    <div class="w-full max-w-sm space-y-4 print-w-72">
+                        <div class="flex justify-between text-sm print:text-xs">
+                            <span class="text-slate-700">Sub Total</span>
+                            <span class="font-black">Rp {{ number_format($total, 0, ',', '.') }}</span>
                         </div>
-                        <div class="p-4">
-                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">Mandiri</p>
-                            <p class="mt-2 text-xl font-black tracking-wider" style="color: {{ $theme }}">1420015180150</p>
+                        <div class="flex items-center justify-between rounded-lg px-4 py-3 text-white" style="background-color: {{ $theme }}">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em]">Total Amount</span>
+                            <span class="text-lg font-black print:text-base">Rp {{ number_format($total, 0, ',', '.') }}</span>
+                        </div>
+                        <p class="text-right text-[9px] font-bold italic" style="color: {{ $theme }}">* Harga tidak menggunakan PPN</p>
+                    </div>
+                </section>
+
+                <!-- Payment Info -->
+                <section class="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-6 w-full print:mt-3 print:p-4">
+                    <h3 class="text-xs font-black text-slate-900">Payment Information</h3>
+                    <div class="mt-3 grid grid-cols-1 md:grid-cols-2 print-grid-2 overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+                        <div class="border-b md:border-b-0 md:border-r border-slate-200 p-4 print:p-3">
+                            <p class="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400">Account Holder</p>
+                            <p class="mt-1 text-xs font-black">ARIF RAKHMAN HADI</p>
+                        </div>
+                        <div class="p-4 print:p-3">
+                            <p class="text-[8px] font-black uppercase tracking-[0.18em] text-slate-400">Mandiri</p>
+                            <p class="mt-1 text-sm font-black tracking-wider" style="color: {{ $theme }}">1420015180150</p>
                         </div>
                     </div>
                 </section>
 
-                <section class="mt-14 flex justify-end">
-                    <div class="relative w-72 text-center">
-                        <p class="mb-16 italic text-slate-500">Managing Director</p>
-                        <img src="{{ asset($supplier['stamp']) }}" alt="Stamp {{ $supplier['name'] }}" class="absolute left-1/2 top-8 h-36 w-36 -translate-x-1/2 object-contain opacity-80">
-                        <div class="border-t border-slate-950 pt-3 text-sm font-black">ARIF RAKHMAN HADI</div>
+                <!-- Signature & Footer -->
+                <section class="mt-10 flex justify-end print:mt-3">
+                    <div class="relative w-64 text-center">
+                        <p class="mb-14 text-xs italic text-slate-500 print:mb-6">Managing Director</p>
+                        <img src="{{ asset($supplier['stamp']) }}" alt="Stamp {{ $supplier['name'] }}" class="absolute left-1/2 top-4 h-28 w-28 -translate-x-1/2 object-contain opacity-80 print:-top-2 print:h-16 print:w-16">
+                        <div class="border-t border-slate-950 pt-2 text-[10px] font-black">ARIF RAKHMAN HADI</div>
                     </div>
                 </section>
 
-                <footer class="mt-16 border-t border-slate-200 pt-6 text-center">
-                    <p class="text-sm text-slate-500">{{ $supplier['address'] }}</p>
-                    <p class="mt-3 text-xs font-black uppercase tracking-[0.18em]" style="color: {{ $theme }}">{{ $supplier['name'] }}</p>
+                <footer class="mt-10 border-t border-slate-200 pt-4 text-center print:mt-2">
+                    <p class="text-[10px] text-slate-500">{{ $supplier['address'] }}</p>
+                    <p class="mt-2 text-[8px] font-black uppercase tracking-[0.18em]" style="color: {{ $theme }}">{{ $supplier['name'] }}</p>
                 </footer>
             </article>
         </main>
