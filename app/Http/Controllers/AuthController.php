@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Sppg;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -48,7 +49,7 @@ class AuthController extends Controller
         ]);
 
         $code = strtoupper(trim($validated['sppg_code']));
-        $unit = config("sppg.units.{$code}");
+        $unit = Sppg::query()->where('code', $code)->first();
 
         if ($unit === null) {
             return back()
@@ -59,9 +60,9 @@ class AuthController extends Controller
         $request->session()->regenerate();
         $request->session()->put('auth_user', [
             'role' => 'SPPG',
-            'id' => $unit['code'],
-            'name' => $unit['name'],
-            'location' => $unit['location'],
+            'id' => $unit->code,
+            'name' => $unit->name,
+            'location' => $unit->location,
         ]);
 
         return redirect()->route('dashboard');

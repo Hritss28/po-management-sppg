@@ -22,11 +22,11 @@
                 </label>
                 <label class="block">
                     <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Tanggal PO</span>
-                    <input type="date" value="{{ $order['date'] ?? now()->format('Y-m-d') }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                    <input name="date" type="date" value="{{ old('date', $order['date'] ?? now()->format('Y-m-d')) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                 </label>
                 <label class="block">
                     <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Dibuat Oleh</span>
-                    <input value="{{ $order['created_by'] ?? $currentUser['name'] }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                    <input name="created_by" value="{{ old('created_by', $order['created_by'] ?? $currentUser['name']) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                 </label>
             </div>
         </section>
@@ -40,16 +40,25 @@
             <div class="space-y-7">
                 <label class="block">
                     <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Nomor SPPG</span>
-                    <input value="{{ $currentUser['role'] === 'SPPG' ? $currentUser['name'] : ($order['sppg'] ?? '') }}" placeholder="SPPG-..." @readonly($currentUser['role'] === 'SPPG') class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                    @if ($currentUser['role'] === 'SPPG')
+                        <input value="{{ $currentUser['id'] }} ({{ $currentUser['name'] }})" readonly class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-700 outline-none">
+                        <input type="hidden" name="sppg_code" value="{{ $currentUser['id'] }}">
+                    @else
+                        <select name="sppg_code" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                            @foreach ($sppgs as $sppg)
+                                <option value="{{ $sppg->code }}" @selected(old('sppg_code', $order['sppg_code'] ?? 'M1101') === $sppg->code)>{{ $sppg->code }} ({{ $sppg->name }})</option>
+                            @endforeach
+                        </select>
+                    @endif
                 </label>
                 <div class="grid grid-cols-2 gap-4">
                     <label class="block">
                         <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Tgl Drop</span>
-                        <input type="date" value="{{ $order['droping_date'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                        <input name="droping_date" type="date" value="{{ old('droping_date', $order['droping_date'] ?? '') }}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                     </label>
                     <label class="block">
                         <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Jam Drop</span>
-                        <input type="time" value="{{ $order['droping_time'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                        <input name="droping_time" type="time" value="{{ old('droping_time', $order['droping_time'] ?? '') }}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                     </label>
                 </div>
             </div>
@@ -65,9 +74,9 @@
         <div class="mb-8 flex items-center justify-between gap-4">
             <h2 class="flex items-center gap-3 text-lg font-black uppercase tracking-tight text-slate-800">
                 <span class="text-2xl text-slate-400">◇</span>
-                Daftar Barang ({{ count($items) }})
+                Daftar Barang (<span id="items-count">{{ count($items) }}</span>)
             </h2>
-            <button type="button" class="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-600 shadow-md shadow-slate-200/70">＋ Tambah Barang</button>
+            <button type="button" id="add-item-btn" class="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-600 shadow-md shadow-slate-200/70 hover:bg-blue-50 transition-colors">＋ Tambah Barang</button>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
@@ -83,38 +92,47 @@
                             <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-[0.16em] text-slate-400">Harga Satuan</th>
                             <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-[0.16em] text-slate-400">Supplier</th>
                             <th class="px-5 py-4 text-left text-xs font-black uppercase tracking-[0.16em] text-slate-400">Catatan</th>
+                            <th class="px-5 py-4 text-center text-xs font-black uppercase tracking-[0.16em] text-slate-400">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-slate-100">
+                    <tbody class="divide-y divide-slate-100" id="items-tbody">
                         @foreach ($items as $item)
+                            @php($itemIndex = $loop->index)
                             <tr>
                                 <td class="px-5 py-4 text-xs font-black text-slate-400">{{ $loop->iteration }}</td>
                                 <td class="px-5 py-4">
-                                    <select class="w-52 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500">
-                                        <option>Pilih...</option>
+                                    <input type="hidden" name="items[{{ $itemIndex }}][id]" value="{{ $item['id'] ?? '' }}">
+                                    <input type="hidden" name="items[{{ $itemIndex }}][name]" value="{{ old("items.$itemIndex.name", $item['name'] ?? '') }}">
+                                    <select name="items[{{ $itemIndex }}][stock_item_id]" class="w-52 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500">
+                                        <option value="">Pilih...</option>
                                         @foreach ($stockItems as $stock)
-                                            <option @selected(($item['name'] ?? '') === $stock['name'])>{{ $stock['name'] }}</option>
+                                            <option value="{{ $stock['id'] }}" @selected((string) old("items.$itemIndex.stock_item_id", $item['stock_item_id'] ?? '') === (string) $stock['id'] || (($item['name'] ?? '') === $stock['name'] && empty($item['stock_item_id'])))>{{ $stock['name'] }}</option>
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-5 py-4"><input value="{{ $item['grade'] ?? 'A' }}" class="w-20 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
-                                <td class="px-5 py-4"><input type="number" value="{{ $item['qty'] ?? 0 }}" class="w-20 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
-                                <td class="px-5 py-4"><input value="{{ strtoupper($item['unit'] ?? 'KG') }}" class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
+                                <td class="px-5 py-4"><input name="items[{{ $itemIndex }}][grade]" value="{{ old("items.$itemIndex.grade", $item['grade'] ?? 'A') }}" class="w-20 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
+                                <td class="px-5 py-4"><input name="items[{{ $itemIndex }}][qty]" type="number" min="0.01" step="0.01" value="{{ old("items.$itemIndex.qty", $item['qty'] ?? 0) }}" class="w-20 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
+                                <td class="px-5 py-4"><input name="items[{{ $itemIndex }}][unit]" value="{{ old("items.$itemIndex.unit", strtoupper($item['unit'] ?? 'KG')) }}" class="w-24 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none"></td>
                                 <td class="px-5 py-4">
                                     <div class="flex w-32 items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-3">
                                         <span class="mr-2 text-[10px] font-black text-slate-400">Rp.</span>
-                                        <input type="text" inputmode="numeric" data-currency-input value="{{ $item['price'] ?? 0 }}" class="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
+                                        <input name="items[{{ $itemIndex }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ old("items.$itemIndex.price", $item['price'] ?? 0) }}" class="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
                                     </div>
                                 </td>
                                 <td class="px-5 py-4">
-                                    <select class="w-36 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500">
-                                        <option>Supplier...</option>
+                                    <select name="items[{{ $itemIndex }}][supplier]" class="w-36 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500">
+                                        <option value="">Supplier...</option>
                                         @foreach ($suppliers as $supplier)
-                                            <option @selected(($item['supplier'] ?? '') === $supplier)>{{ $supplier }}</option>
+                                            <option value="{{ $supplier }}" @selected(old("items.$itemIndex.supplier", $item['supplier'] ?? '') === $supplier)>{{ $supplier }}</option>
                                         @endforeach
                                     </select>
                                 </td>
-                                <td class="px-5 py-4"><input value="{{ $item['request'] ?? '' }}" placeholder="Catatan..." class="w-44 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-600 outline-none"></td>
+                                <td class="px-5 py-4"><input name="items[{{ $itemIndex }}][request]" value="{{ old("items.$itemIndex.request", $item['request'] ?? '') }}" placeholder="Catatan..." class="w-44 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-sm font-semibold text-slate-600 outline-none"></td>
+                                <td class="px-5 py-4 text-center">
+                                    <button type="button" class="remove-item-btn p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Hapus Barang">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                    </button>
+                                </td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -123,3 +141,77 @@
         </div>
     </section>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tbody = document.getElementById('items-tbody');
+        const btnAdd = document.getElementById('add-item-btn');
+        const itemsCountLabel = document.getElementById('items-count');
+        let itemIndexCounter = {{ count($items) || 1 }};
+
+        function updateRowNumbersAndButtons() {
+            const rows = tbody.querySelectorAll('tr');
+            if(itemsCountLabel) itemsCountLabel.textContent = rows.length;
+            rows.forEach((row, index) => {
+                row.querySelector('td:first-child').textContent = index + 1;
+                const removeBtn = row.querySelector('.remove-item-btn');
+                if (removeBtn) {
+                    if (rows.length === 1) {
+                        removeBtn.classList.add('opacity-30', 'cursor-not-allowed');
+                        removeBtn.disabled = true;
+                    } else {
+                        removeBtn.classList.remove('opacity-30', 'cursor-not-allowed');
+                        removeBtn.disabled = false;
+                    }
+                }
+            });
+        }
+
+        updateRowNumbersAndButtons();
+
+        if(btnAdd) {
+            btnAdd.addEventListener('click', function () {
+                const firstRow = tbody.querySelector('tr');
+                if (!firstRow) return;
+
+                const newRow = firstRow.cloneNode(true);
+                const inputs = newRow.querySelectorAll('input, select');
+                
+                inputs.forEach(input => {
+                    if (input.tagName === 'SELECT') {
+                        input.selectedIndex = 0;
+                    } else if (input.type !== 'hidden' || input.name.includes('[id]')) {
+                        if (input.name.includes('[qty]') || input.name.includes('[price]')) {
+                            input.value = 0;
+                        } else if (input.name.includes('[unit]')) {
+                            input.value = 'KG';
+                        } else if (input.name.includes('[grade]')) {
+                            input.value = 'A';
+                        } else {
+                            input.value = '';
+                        }
+                    }
+
+                    if (input.name) {
+                        input.name = input.name.replace(/\[\d+\]/, '[' + itemIndexCounter + ']');
+                    }
+                });
+
+                tbody.appendChild(newRow);
+                itemIndexCounter++;
+                updateRowNumbersAndButtons();
+            });
+        }
+
+        tbody.addEventListener('click', function (e) {
+            const removeBtn = e.target.closest('.remove-item-btn');
+            if (removeBtn && !removeBtn.disabled) {
+                const tr = removeBtn.closest('tr');
+                if (tbody.querySelectorAll('tr').length > 1) {
+                    tr.remove();
+                    updateRowNumbersAndButtons();
+                }
+            }
+        });
+    });
+</script>

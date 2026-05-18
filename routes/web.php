@@ -14,8 +14,10 @@ Route::get('/dashboard', [ProcurementController::class, 'dashboard'])->name('das
 
 Route::get('/purchase-orders', [ProcurementController::class, 'purchaseOrders'])->name('purchase-orders.index');
 Route::get('/purchase-orders/create', [ProcurementController::class, 'createPurchaseOrder'])->name('purchase-orders.create');
+Route::post('/purchase-orders', [ProcurementController::class, 'storePurchaseOrder'])->name('purchase-orders.store');
 Route::patch('/purchase-orders/{id}/status', [ProcurementController::class, 'updatePurchaseOrderStatus'])->name('purchase-orders.status.update');
 Route::patch('/purchase-orders/{id}/suppliers', [ProcurementController::class, 'updatePurchaseOrderSuppliers'])->name('purchase-orders.suppliers.update');
+Route::patch('/purchase-orders/{id}', [ProcurementController::class, 'updatePurchaseOrder'])->name('purchase-orders.update');
 Route::delete('/purchase-orders/{id}', [ProcurementController::class, 'deletePurchaseOrder'])->name('purchase-orders.destroy');
 Route::get('/purchase-orders/{id}/preview', [ProcurementController::class, 'previewPurchaseOrder'])->name('purchase-orders.preview');
 Route::get('/purchase-orders/{id}', [ProcurementController::class, 'showPurchaseOrder'])->name('purchase-orders.show');

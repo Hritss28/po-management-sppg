@@ -2,9 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\DeliveryNote;
+use App\Models\Invoice;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseOrderItem;
+use App\Models\Sppg;
+use App\Models\StockItem;
+use App\Models\Supplier;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ProcurementController extends Controller
@@ -16,11 +25,9 @@ class ProcurementController extends Controller
         }
 
         $orders = $this->visibleOrders();
-        $invoicePaid = $orders->sum(fn (array $order): int => collect($order['invoices'] ?? [])->where('status', 'PAID')->sum('total_amount'));
-        $invoiceUnpaid = $orders->sum(fn (array $order): int => collect($order['invoices'] ?? [])->where('status', 'UNPAID')->sum('total_amount'));
-        $estimatedUnbilled = $orders->sum(function (array $order): int {
-            return collect($order['items'])->where('invoiced', false)->sum(fn (array $item): int => $item['qty'] * $item['price']);
-        });
+        $invoicePaid = Invoice::query()->where('status', 'PAID')->sum('total_amount');
+        $invoiceUnpaid = Invoice::query()->where('status', 'UNPAID')->sum('total_amount');
+        $estimatedUnbilled = PurchaseOrderItem::query()->where('is_invoiced', false)->get()->sum(fn (PurchaseOrderItem $item): float|int => $item->qty * $item->price);
 
         return view('dashboard.index', [
             'currentUser' => $this->currentUser(),
@@ -49,21 +56,25 @@ class ProcurementController extends Controller
             return $redirect;
         }
 
-        $orders = $this->visibleOrders();
+        $query = $this->visibleOrdersQuery();
         $search = strtolower($request->string('search')->toString());
         $status = $request->string('status')->toString();
 
         if ($search !== '') {
-            $orders = $orders->filter(function (array $order) use ($search): bool {
-                $items = collect($order['items'])->pluck('name')->implode(' ');
-
-                return str_contains(strtolower($order['number'].' '.$order['sppg'].' '.$order['created_by'].' '.$items), $search);
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder
+                    ->whereRaw('LOWER(number) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(created_by) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('sppg', fn (Builder $sppg): Builder => $sppg->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]))
+                    ->orWhereHas('items', fn (Builder $item): Builder => $item->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
             });
         }
 
         if ($status !== '' && $status !== 'ALL') {
-            $orders = $orders->where('status', $status);
+            $query->where('status', $status);
         }
+
+        $orders = $query->latest('id')->get()->map(fn (PurchaseOrder $order): array => $this->orderToArray($order));
 
         return view('purchase-orders.index', [
             'currentUser' => $this->currentUser(),
@@ -83,7 +94,36 @@ class ProcurementController extends Controller
             'currentUser' => $this->currentUser(),
             'stockItems' => $this->stockItems(),
             'suppliers' => $this->suppliers(),
+            'sppgs' => Sppg::query()->orderBy('name')->get(),
         ]);
+    }
+
+    public function storePurchaseOrder(Request $request): RedirectResponse
+    {
+        if ($redirect = $this->requireAuth()) {
+            return $redirect;
+        }
+
+        $validated = $this->validatePurchaseOrder($request);
+
+        $order = DB::transaction(function () use ($validated): PurchaseOrder {
+            $sppg = $this->sppgForRequest($validated['sppg_code'] ?? null);
+            $order = PurchaseOrder::query()->create([
+                'number' => $this->nextPurchaseOrderNumber($validated['supplier_prefix'] ?? 'DBM'),
+                'date' => $validated['date'],
+                'created_by' => $validated['created_by'],
+                'sppg_id' => $sppg->id,
+                'droping_date' => $validated['droping_date'] ?? null,
+                'droping_time' => $validated['droping_time'] ?? null,
+                'status' => 'PROCESSING',
+            ]);
+
+            $this->syncPurchaseOrderItems($order, $validated['items']);
+
+            return $order;
+        });
+
+        return redirect()->route('purchase-orders.show', $order->id)->with('success', 'PO berhasil dibuat.');
     }
 
     public function showPurchaseOrder(string $id): View|RedirectResponse
@@ -94,7 +134,7 @@ class ProcurementController extends Controller
 
         return view('purchase-orders.show', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
             'suppliers' => $this->suppliers(),
         ]);
     }
@@ -109,10 +149,37 @@ class ProcurementController extends Controller
 
         return view('purchase-orders.edit', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
             'stockItems' => $this->stockItems(),
             'suppliers' => $this->suppliers(),
+            'sppgs' => Sppg::query()->orderBy('name')->get(),
         ]);
+    }
+
+    public function updatePurchaseOrder(Request $request, string $id): RedirectResponse
+    {
+        if ($redirect = $this->requireAuth()) {
+            return $redirect;
+        }
+
+        $this->authorizeAdmin();
+        $validated = $this->validatePurchaseOrder($request);
+        $order = $this->findOrderModel($id);
+
+        DB::transaction(function () use ($order, $validated): void {
+            $sppg = $this->sppgForRequest($validated['sppg_code'] ?? null);
+            $order->update([
+                'date' => $validated['date'],
+                'created_by' => $validated['created_by'],
+                'sppg_id' => $sppg->id,
+                'droping_date' => $validated['droping_date'] ?? null,
+                'droping_time' => $validated['droping_time'] ?? null,
+            ]);
+            $order->items()->delete();
+            $this->syncPurchaseOrderItems($order, $validated['items']);
+        });
+
+        return redirect()->route('purchase-orders.show', $order->id)->with('success', 'PO berhasil diperbarui.');
     }
 
     public function updatePurchaseOrderStatus(Request $request, string $id): RedirectResponse
@@ -122,14 +189,8 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
-        $validated = $request->validate([
-            'status' => ['required', 'in:VALID,PROCESSING,COMPLETED,INVOICED,CANCELLED'],
-        ]);
-
-        $statuses = session('po_statuses', []);
-        $statuses[$id] = $validated['status'];
-        $request->session()->put('po_statuses', $statuses);
+        $validated = $request->validate(['status' => ['required', 'in:VALID,PROCESSING,COMPLETED,INVOICED,CANCELLED']]);
+        $this->findOrderModel($id)->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Status PO berhasil diperbarui.');
     }
@@ -141,31 +202,30 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
         $validated = $request->validate([
             'suppliers' => ['required', 'array'],
-            'suppliers.*' => ['required', 'in:'.implode(',', $this->suppliers())],
+            'suppliers.*' => ['required', 'exists:suppliers,name'],
         ]);
+        $order = $this->findOrderModel($id);
 
-        $supplierAssignments = session('po_supplier_assignments', []);
-        $supplierAssignments[$id] = array_values($validated['suppliers']);
-        $request->session()->put('po_supplier_assignments', $supplierAssignments);
+        foreach (array_values($validated['suppliers']) as $index => $supplierName) {
+            $supplier = Supplier::query()->where('name', $supplierName)->first();
+            $order->items()->skip($index)->first()?->update(['supplier_id' => $supplier?->id]);
+        }
 
         return back()->with('success', 'Penugasan supplier berhasil disimpan.');
     }
 
-    public function deletePurchaseOrder(Request $request, string $id): RedirectResponse
+    public function deletePurchaseOrder(string $id): RedirectResponse
     {
         if ($redirect = $this->requireAuth()) {
             return $redirect;
         }
 
         $this->authorizeAdmin();
+        $this->findOrderModel($id)->delete();
 
-        $deleted = collect(session('po_deleted_ids', []))->push($id)->unique()->values()->all();
-        $request->session()->put('po_deleted_ids', $deleted);
-
-        return redirect()->route('purchase-orders.index')->with('success', 'PO dihapus dari tampilan sementara.');
+        return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil dihapus.');
     }
 
     public function previewPurchaseOrder(string $id): View|RedirectResponse
@@ -176,7 +236,7 @@ class ProcurementController extends Controller
 
         return view('purchase-orders.preview', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
             'suppliers' => $this->suppliers(),
         ]);
     }
@@ -187,21 +247,21 @@ class ProcurementController extends Controller
             return $redirect;
         }
 
-        $orders = $this->visibleOrders()->whereIn('status', ['PROCESSING', 'COMPLETED', 'INVOICED'])->values();
+        $query = $this->visibleOrdersQuery()->whereIn('status', ['PROCESSING', 'COMPLETED', 'INVOICED']);
         $search = strtolower($request->string('search')->toString());
 
         if ($search !== '') {
-            $orders = $orders->filter(function (array $order) use ($search): bool {
-                $deliveryNumber = $order['delivery']['number'] ?? '';
-                $items = collect($order['items'])->pluck('name')->implode(' ');
-
-                return str_contains(strtolower($order['number'].' '.$deliveryNumber.' '.$order['sppg'].' '.$items), $search);
-            })->values();
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder
+                    ->whereRaw('LOWER(number) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('deliveryNote', fn (Builder $delivery): Builder => $delivery->whereRaw('LOWER(number) LIKE ?', ["%{$search}%"]))
+                    ->orWhereHas('items', fn (Builder $item): Builder => $item->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]));
+            });
         }
 
         return view('surat-jalan.index', [
             'currentUser' => $this->currentUser(),
-            'orders' => $orders,
+            'orders' => $query->latest('id')->get()->map(fn (PurchaseOrder $order): array => $this->orderToArray($order)),
             'filters' => ['search' => $request->string('search')->toString()],
         ]);
     }
@@ -214,7 +274,7 @@ class ProcurementController extends Controller
 
         return view('surat-jalan.show', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
             'suppliers' => $this->suppliers(),
         ]);
     }
@@ -226,7 +286,7 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
+        $order = $this->findOrderModel($id);
         $validated = $request->validate([
             'kepada' => ['required', 'string', 'max:120'],
             'kd_sppg' => ['nullable', 'string', 'max:40'],
@@ -242,32 +302,39 @@ class ProcurementController extends Controller
             'prices' => ['required', 'array'],
             'prices.*' => ['required', 'numeric', 'min:0'],
             'suppliers' => ['required', 'array'],
-            'suppliers.*' => ['required', 'in:'.implode(',', $this->suppliers())],
+            'suppliers.*' => ['required', 'exists:suppliers,name'],
         ]);
 
-        $deliveries = session('surat_jalan_overrides', []);
-        $deliveries[$id] = [
-            'number' => $validated['surat_jalan_no'],
-            'date' => $validated['delivery_date'],
-            'driver' => $validated['driver'] ?: 'Nama Pengirim',
-            'notes' => $validated['notes'] ?: '-',
-            'kepada' => $validated['kepada'],
-            'kd_sppg' => $validated['kd_sppg'] ?: 'M1111',
-            'nama_sppg' => $validated['nama_sppg'],
-            'pj_sppg' => $validated['pj_sppg'] ?: '-',
-            'whatsapp' => $validated['whatsapp'] ?: '-',
-            'qty_actual' => array_values($validated['qty_actual']),
-            'prices' => array_values($validated['prices']),
-            'suppliers' => array_values($validated['suppliers']),
-            'has_photo' => true,
-        ];
-        $request->session()->put('surat_jalan_overrides', $deliveries);
+        DB::transaction(function () use ($order, $validated): void {
+            $order->deliveryNote()->updateOrCreate(
+                ['purchase_order_id' => $order->id],
+                [
+                    'number' => $validated['surat_jalan_no'],
+                    'date' => $validated['delivery_date'],
+                    'driver' => $validated['driver'] ?: 'Nama Pengirim',
+                    'notes' => $validated['notes'] ?: '-',
+                    'kepada' => $validated['kepada'],
+                    'kd_sppg' => $validated['kd_sppg'] ?: $order->sppg->code,
+                    'nama_sppg' => $validated['nama_sppg'],
+                    'pj_sppg' => $validated['pj_sppg'] ?: '-',
+                    'whatsapp' => $validated['whatsapp'] ?: '-',
+                    'has_photo' => true,
+                ],
+            );
 
-        $statuses = session('po_statuses', []);
-        $statuses[$id] = 'COMPLETED';
-        $request->session()->put('po_statuses', $statuses);
+            foreach ($order->items as $index => $item) {
+                $supplier = Supplier::query()->where('name', $validated['suppliers'][$index] ?? null)->first();
+                $item->update([
+                    'qty' => $validated['qty_actual'][$index] ?? $item->qty,
+                    'price' => $validated['prices'][$index] ?? $item->price,
+                    'supplier_id' => $supplier?->id ?? $item->supplier_id,
+                ]);
+            }
 
-        return redirect()->route('surat-jalan.show', $id)->with('success', 'Surat Jalan berhasil disimpan.');
+            $order->update(['status' => 'COMPLETED']);
+        });
+
+        return redirect()->route('surat-jalan.show', $order->id)->with('success', 'Surat Jalan berhasil disimpan.');
     }
 
     public function previewSuratJalan(string $id): View|RedirectResponse
@@ -278,7 +345,7 @@ class ProcurementController extends Controller
 
         return view('surat-jalan.preview', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
         ]);
     }
 
@@ -288,53 +355,37 @@ class ProcurementController extends Controller
             return $redirect;
         }
 
-        $orders = $this->visibleOrders();
-        $publishedInvoices = collect(session('published_invoices', []))
-            ->map(function (array $invoice) use ($orders): array {
-                return [
-                    'order' => $orders->firstWhere('id', $invoice['order_id']) ?? $orders->first(),
-                    'invoice' => $invoice,
-                ];
-            })
-            ->filter(fn (array $entry): bool => ! empty($entry['order']))
-            ->values();
+        $orders = $this->visibleOrdersQuery()->latest('id')->get();
+        $historyInvoices = Invoice::query()
+            ->with(['purchaseOrder.sppg', 'items', 'supplier'])
+            ->latest('id')
+            ->get()
+            ->map(fn (Invoice $invoice): array => [
+                'order' => $this->orderToArray($invoice->purchaseOrder),
+                'invoice' => $this->invoiceToArray($invoice),
+            ]);
 
-        $historyInvoices = $orders
-            ->flatMap(function (array $order): array {
-                return collect($order['invoices'] ?? [])->map(fn (array $invoice): array => [
-                    'order' => $order,
-                    'invoice' => $invoice,
-                ])->all();
-            })
-            ->concat($publishedInvoices)
-            ->values();
-
-        $publishedKeys = $publishedInvoices
+        $publishedKeys = $historyInvoices
             ->map(fn (array $entry): string => $entry['order']['id'].'|'.$entry['invoice']['supplier'])
             ->all();
 
         $pendingInvoices = $orders
-            ->filter(fn (array $order): bool => in_array($order['status'], ['COMPLETED', 'INVOICED'], true))
-            ->flatMap(function (array $order) use ($publishedKeys): array {
-                return collect($order['items'])
-                    ->filter(fn (array $item): bool => ! ($item['invoiced'] ?? false))
-                    ->groupBy('supplier')
-                    ->reject(fn (Collection $items, string $supplier): bool => in_array($order['id'].'|'.$supplier, $publishedKeys, true))
-                    ->map(function (Collection $items, string $supplier) use ($order): array {
-                        return [
-                            'order' => $order,
-                            'supplier' => $supplier,
-                            'items' => $items->values(),
-                            'total' => $items->sum(fn (array $item): int|float => $item['qty'] * $item['price']),
-                        ];
-                    })
+            ->filter(fn (PurchaseOrder $order): bool => in_array($order->status, ['COMPLETED', 'INVOICED'], true))
+            ->flatMap(function (PurchaseOrder $order) use ($publishedKeys): array {
+                return $order->items
+                    ->filter(fn (PurchaseOrderItem $item): bool => ! $item->is_invoiced)
+                    ->groupBy(fn (PurchaseOrderItem $item): string => $item->supplier?->name ?? '-')
+                    ->reject(fn (Collection $items, string $supplier): bool => in_array($order->id.'|'.$supplier, $publishedKeys, true))
+                    ->map(fn (Collection $items, string $supplier): array => [
+                        'order' => $this->orderToArray($order),
+                        'supplier' => $supplier,
+                        'items' => $items->map(fn (PurchaseOrderItem $item): array => $this->itemToArray($item))->values(),
+                        'total' => $items->sum(fn (PurchaseOrderItem $item): float|int => $item->qty * $item->price),
+                    ])
                     ->values()
                     ->all();
             })
             ->values();
-
-        $totalPaid = $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['status'] === 'PAID' ? $entry['invoice']['total_amount'] : 0);
-        $totalUnpaid = $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['status'] === 'UNPAID' ? $entry['invoice']['total_amount'] : 0);
 
         return view('invoices.index', [
             'currentUser' => $this->currentUser(),
@@ -343,8 +394,8 @@ class ProcurementController extends Controller
             'activeTab' => $request->string('tab')->toString() === 'history' ? 'history' : 'pending',
             'stats' => [
                 'total' => $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['total_amount']),
-                'paid' => $totalPaid,
-                'unpaid' => $totalUnpaid,
+                'paid' => $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['status'] === 'PAID' ? $entry['invoice']['total_amount'] : 0),
+                'unpaid' => $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['status'] === 'UNPAID' ? $entry['invoice']['total_amount'] : 0),
                 'count' => $historyInvoices->count(),
             ],
         ]);
@@ -357,18 +408,18 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
-        $order = $this->findOrder($id);
-        $supplierName = $request->string('supplier')->toString() ?: collect($order['items'])->first()['supplier'];
-        $items = collect($order['items'])
-            ->filter(fn (array $item): bool => $item['supplier'] === $supplierName && ! ($item['invoiced'] ?? false))
+        $order = $this->findOrderModel($id);
+        $supplierName = $request->string('supplier')->toString() ?: $order->items->first()?->supplier?->name;
+        $items = $order->items
+            ->filter(fn (PurchaseOrderItem $item): bool => ($item->supplier?->name === $supplierName) && ! $item->is_invoiced)
+            ->map(fn (PurchaseOrderItem $item): array => $this->itemToArray($item))
             ->values();
 
         return view('invoices.create', [
             'currentUser' => $this->currentUser(),
-            'order' => $order,
+            'order' => $this->orderToArray($order),
             'items' => $items,
-            'invoiceNumber' => $this->invoiceNumberFor($supplierName, $order['number']),
+            'invoiceNumber' => $this->invoiceNumberFor($supplierName, $order->number),
             'supplier' => $this->supplierDetails($supplierName),
         ]);
     }
@@ -380,47 +431,58 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
-        $order = $this->findOrder($id);
+        $order = $this->findOrderModel($id);
         $validated = $request->validate([
-            'supplier' => ['required', 'in:'.implode(',', $this->suppliers())],
-            'invoice_no' => ['required', 'string', 'max:80'],
+            'supplier' => ['required', 'exists:suppliers,name'],
+            'invoice_no' => ['required', 'string', 'max:80', 'unique:invoices,number'],
             'invoice_date' => ['required', 'date'],
             'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['nullable', 'exists:purchase_order_items,id'],
             'items.*.name' => ['required', 'string', 'max:120'],
             'items.*.unit' => ['required', 'string', 'max:20'],
             'items.*.qty' => ['required', 'numeric', 'min:0.01'],
             'items.*.price' => ['required', 'numeric', 'min:1'],
         ]);
 
-        $items = collect($validated['items'])
-            ->map(fn (array $item): array => [
-                'name' => $item['name'],
-                'qty' => (float) $item['qty'],
-                'unit' => $item['unit'],
-                'grade' => 'A',
-                'price' => (int) $item['price'],
-                'supplier' => $validated['supplier'],
-                'invoiced' => true,
-                'request' => null,
-            ])
-            ->values();
+        DB::transaction(function () use ($order, $validated): void {
+            $supplier = Supplier::query()->where('name', $validated['supplier'])->firstOrFail();
+            $invoice = Invoice::query()->create([
+                'purchase_order_id' => $order->id,
+                'supplier_id' => $supplier->id,
+                'number' => $validated['invoice_no'],
+                'date' => $validated['invoice_date'],
+                'supplier_name' => $supplier->name,
+                'status' => 'UNPAID',
+                'total_amount' => 0,
+            ]);
 
-        $publishedInvoices = session('published_invoices', []);
-        $publishedInvoices[] = [
-            'order_id' => $order['id'],
-            'number' => $validated['invoice_no'],
-            'date' => $validated['invoice_date'],
-            'supplier' => $validated['supplier'],
-            'status' => 'UNPAID',
-            'total_amount' => $items->sum(fn (array $item): int|float => $item['qty'] * $item['price']),
-            'items' => $items->all(),
-        ];
-        $request->session()->put('published_invoices', $publishedInvoices);
+            $total = 0;
+            foreach ($validated['items'] as $itemData) {
+                $subtotal = (int) ($itemData['qty'] * $itemData['price']);
+                $total += $subtotal;
+                $invoice->items()->create([
+                    'purchase_order_item_id' => $itemData['id'] ?? null,
+                    'name' => $itemData['name'],
+                    'qty' => $itemData['qty'],
+                    'unit' => $itemData['unit'],
+                    'price' => $itemData['price'],
+                    'subtotal' => $subtotal,
+                ]);
 
-        $statuses = session('po_statuses', []);
-        $statuses[$id] = 'INVOICED';
-        $request->session()->put('po_statuses', $statuses);
+                if (! empty($itemData['id'])) {
+                    PurchaseOrderItem::query()->whereKey($itemData['id'])->update([
+                        'price' => $itemData['price'],
+                        'is_invoiced' => true,
+                    ]);
+                }
+            }
+
+            $invoice->update(['total_amount' => $total]);
+
+            if ($order->items()->where('is_invoiced', false)->doesntExist()) {
+                $order->update(['status' => 'INVOICED']);
+            }
+        });
 
         return redirect()->route('invoices.index', ['tab' => 'history'])->with('success', 'Invoice berhasil diterbitkan.');
     }
@@ -433,7 +495,7 @@ class ProcurementController extends Controller
 
         return view('invoices.show', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrder($id),
+            'order' => $this->findOrderArray($id),
         ]);
     }
 
@@ -444,27 +506,11 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
         $validated = $request->validate([
             'invoice_no' => ['required', 'string'],
             'status' => ['required', 'in:PAID,UNPAID'],
         ]);
-
-        $statuses = session('invoice_statuses', []);
-        $statuses[$id][$validated['invoice_no']] = $validated['status'];
-        $request->session()->put('invoice_statuses', $statuses);
-
-        $publishedInvoices = collect(session('published_invoices', []))
-            ->map(function (array $invoice) use ($id, $validated): array {
-                if (($invoice['order_id'] ?? null) === $id && $invoice['number'] === $validated['invoice_no']) {
-                    $invoice['status'] = $validated['status'];
-                }
-
-                return $invoice;
-            })
-            ->values()
-            ->all();
-        $request->session()->put('published_invoices', $publishedInvoices);
+        Invoice::query()->where('purchase_order_id', $id)->where('number', $validated['invoice_no'])->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Status invoice berhasil diperbarui.');
     }
@@ -475,27 +521,35 @@ class ProcurementController extends Controller
             return $redirect;
         }
 
-        $order = $this->findOrder($id);
-        $invoiceNo = $request->string('invoice')->toString();
-        $invoice = collect($order['invoices'] ?? [])
-            ->concat(collect(session('published_invoices', []))->where('order_id', $order['id']))
-            ->firstWhere('number', $invoiceNo);
-        $supplier = $request->string('supplier')->toString() ?: ($invoice['supplier'] ?? collect($order['items'])->first()['supplier']);
-        $items = isset($invoice['items']) ? collect($invoice['items']) : collect($order['items'])->where('supplier', $supplier)->values();
-        $invoice ??= [
-            'number' => $this->invoiceNumberFor($supplier, $order['number']),
+        $order = $this->findOrderModel($id);
+        $invoice = Invoice::query()
+            ->with(['items', 'supplier'])
+            ->where('purchase_order_id', $order->id)
+            ->where('number', $request->string('invoice')->toString())
+            ->first();
+        $supplierName = $request->string('supplier')->toString() ?: ($invoice?->supplier_name ?? $order->items->first()?->supplier?->name);
+        $items = $invoice
+            ? $invoice->items->map(fn ($item): array => [
+                'name' => $item->name,
+                'qty' => (float) $item->qty,
+                'unit' => $item->unit,
+                'price' => $item->price,
+            ])
+            : $order->items->where('supplier.name', $supplierName)->map(fn (PurchaseOrderItem $item): array => $this->itemToArray($item))->values();
+        $invoiceArray = $invoice ? $this->invoiceToArray($invoice) : [
+            'number' => $this->invoiceNumberFor($supplierName, $order->number),
             'date' => now()->format('Y-m-d'),
-            'supplier' => $supplier,
+            'supplier' => $supplierName,
             'status' => 'UNPAID',
             'total_amount' => $items->sum(fn (array $item): int|float => $item['qty'] * $item['price']),
         ];
 
         return view('invoices.preview', [
             'currentUser' => $this->currentUser(),
-            'order' => $order,
-            'invoice' => $invoice,
+            'order' => $this->orderToArray($order),
+            'invoice' => $invoiceArray,
             'items' => $items,
-            'supplier' => $this->supplierDetails($invoice['supplier']),
+            'supplier' => $this->supplierDetails($supplierName),
         ]);
     }
 
@@ -505,25 +559,22 @@ class ProcurementController extends Controller
             return $redirect;
         }
 
-        $items = collect($this->stockItems());
-        $search = strtolower($request->string('search')->toString());
-
-        if ($search !== '') {
-            $items = $items
-                ->filter(fn (array $item): bool => str_contains(strtolower($item['name'].' '.$item['unit']), $search))
-                ->values();
-        }
+        $items = StockItem::query()
+            ->when($request->filled('search'), fn (Builder $query): Builder => $query->whereRaw('LOWER(name) LIKE ?', ['%'.strtolower($request->string('search')->toString()).'%']))
+            ->latest('id')
+            ->get()
+            ->map(fn (StockItem $item): array => $this->stockItemToArray($item));
 
         return view('master-stok.index', [
             'currentUser' => $this->currentUser(),
             'items' => $items,
             'filters' => ['search' => $request->string('search')->toString()],
-            'editItem' => $request->filled('edit') ? collect($this->stockItems())->firstWhere('id', $request->string('edit')->toString()) : null,
+            'editItem' => $request->filled('edit') ? $this->stockItemToArray(StockItem::query()->find($request->string('edit')->toString())) : null,
             'isCreating' => $request->string('mode')->toString() === 'create',
         ]);
     }
 
-    public function createStock(): View|RedirectResponse
+    public function createStock(): RedirectResponse
     {
         if ($redirect = $this->requireAuth()) {
             return $redirect;
@@ -541,21 +592,16 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
         ]);
-
-        $createdItems = session('stock_created_items', []);
-        $createdItems[] = [
-            'id' => 'stock-'.strtolower(str_replace('.', '', uniqid('', true))),
+        StockItem::query()->create([
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
             'category' => 'Operasional',
             'status' => 'Aktif',
-        ];
-        $request->session()->put('stock_created_items', $createdItems);
+        ]);
 
         return redirect()->route('master-stok.index')->with('success', 'Barang berhasil ditambahkan.');
     }
@@ -568,11 +614,11 @@ class ProcurementController extends Controller
 
         return view('master-stok.show', [
             'currentUser' => $this->currentUser(),
-            'item' => collect($this->stockItems())->firstWhere('id', $id) ?? $this->stockItems()[0],
+            'item' => $this->stockItemToArray(StockItem::query()->findOrFail($id)),
         ]);
     }
 
-    public function editStock(string $id): View|RedirectResponse
+    public function editStock(string $id): RedirectResponse
     {
         if ($redirect = $this->requireAuth()) {
             return $redirect;
@@ -590,34 +636,71 @@ class ProcurementController extends Controller
         }
 
         $this->authorizeAdmin();
-
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
         ]);
-
-        $stockUpdates = session('stock_updates', []);
-        $stockUpdates[$id] = [
+        StockItem::query()->findOrFail($id)->update([
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
-        ];
-        $request->session()->put('stock_updates', $stockUpdates);
+        ]);
 
         return redirect()->route('master-stok.index')->with('success', 'Barang berhasil diperbarui.');
     }
 
-    public function deleteStock(Request $request, string $id): RedirectResponse
+    public function deleteStock(string $id): RedirectResponse
     {
         if ($redirect = $this->requireAuth()) {
             return $redirect;
         }
 
         $this->authorizeAdmin();
-
-        $deletedItems = collect(session('stock_deleted_ids', []))->push($id)->unique()->values()->all();
-        $request->session()->put('stock_deleted_ids', $deletedItems);
+        StockItem::query()->findOrFail($id)->delete();
 
         return redirect()->route('master-stok.index')->with('success', 'Barang berhasil dihapus.');
+    }
+
+    private function validatePurchaseOrder(Request $request): array
+    {
+        return $request->validate([
+            'date' => ['required', 'date'],
+            'created_by' => ['required', 'string', 'max:120'],
+            'sppg_code' => ['required', 'exists:sppgs,code'],
+            'droping_date' => ['nullable', 'date'],
+            'droping_time' => ['nullable', 'date_format:H:i'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.stock_item_id' => ['nullable', 'exists:stock_items,id'],
+            'items.*.name' => ['nullable', 'string', 'max:120'],
+            'items.*.grade' => ['required', 'string', 'max:30'],
+            'items.*.qty' => ['required', 'numeric', 'min:0.01'],
+            'items.*.unit' => ['nullable', 'string', 'max:30'],
+            'items.*.price' => ['required', 'numeric', 'min:0'],
+            'items.*.supplier' => ['nullable', 'exists:suppliers,name'],
+            'items.*.request' => ['nullable', 'string', 'max:255'],
+        ]);
+    }
+
+    private function syncPurchaseOrderItems(PurchaseOrder $order, array $items): void
+    {
+        foreach ($items as $itemData) {
+            if (($itemData['name'] ?? '') === '' && empty($itemData['stock_item_id'])) {
+                continue;
+            }
+
+            $stockItem = ! empty($itemData['stock_item_id']) ? StockItem::query()->find($itemData['stock_item_id']) : null;
+            $supplier = ! empty($itemData['supplier']) ? Supplier::query()->where('name', $itemData['supplier'])->first() : null;
+            $order->items()->create([
+                'stock_item_id' => $stockItem?->id,
+                'supplier_id' => $supplier?->id,
+                'name' => $stockItem?->name ?? $itemData['name'],
+                'grade' => $itemData['grade'],
+                'qty' => $itemData['qty'],
+                'unit' => strtoupper($stockItem?->unit ?? $itemData['unit']),
+                'price' => $itemData['price'],
+                'request_note' => $itemData['request'] ?? null,
+                'is_invoiced' => false,
+            ]);
+        }
     }
 
     private function requireAuth(): ?RedirectResponse
@@ -634,34 +717,129 @@ class ProcurementController extends Controller
         abort_unless(($this->currentUser()['role'] ?? null) === 'ADMIN', 403);
     }
 
-    /**
-     * @return array{id:string, role:string, name:string, location?:string}
-     */
     private function currentUser(): array
     {
         return session('auth_user', []);
     }
 
-    private function visibleOrders(): Collection
+    private function visibleOrdersQuery(): Builder
     {
-        $user = $this->currentUser();
-        $orders = collect($this->orders());
+        $query = PurchaseOrder::query()->with(['sppg', 'items.supplier', 'deliveryNote', 'invoices.items', 'invoices.supplier']);
 
-        if (($user['role'] ?? null) === 'SPPG') {
-            return $orders->where('sppg_code', $user['id'])->values();
+        if (($this->currentUser()['role'] ?? null) === 'SPPG') {
+            $query->whereHas('sppg', fn (Builder $sppg): Builder => $sppg->where('code', $this->currentUser()['id']));
         }
 
-        return $orders;
+        return $query;
     }
 
-    private function findOrder(string $id): array
+    private function visibleOrders(): Collection
     {
-        return $this->visibleOrders()->firstWhere('id', $id) ?? $this->visibleOrders()->first();
+        return $this->visibleOrdersQuery()->latest('id')->get()->map(fn (PurchaseOrder $order): array => $this->orderToArray($order));
+    }
+
+    private function findOrderModel(string $id): PurchaseOrder
+    {
+        return $this->visibleOrdersQuery()->whereKey($id)->firstOrFail();
+    }
+
+    private function findOrderArray(string $id): array
+    {
+        return $this->orderToArray($this->findOrderModel($id));
+    }
+
+    private function orderToArray(PurchaseOrder $order): array
+    {
+        $order->loadMissing(['sppg', 'items.supplier', 'deliveryNote', 'invoices.items', 'invoices.supplier']);
+
+        return [
+            'id' => (string) $order->id,
+            'number' => $order->number,
+            'date' => $order->date->format('Y-m-d'),
+            'created_by' => $order->created_by,
+            'sppg' => $order->sppg->name,
+            'sppg_code' => $order->sppg->code,
+            'droping_date' => $order->droping_date?->format('Y-m-d'),
+            'droping_time' => $order->droping_time ? substr((string) $order->droping_time, 0, 5) : null,
+            'status' => $order->status,
+            'items' => $order->items->map(fn (PurchaseOrderItem $item): array => $this->itemToArray($item))->values()->all(),
+            'delivery' => $order->deliveryNote ? $this->deliveryToArray($order->deliveryNote) : null,
+            'invoices' => $order->invoices->map(fn (Invoice $invoice): array => $this->invoiceToArray($invoice))->values()->all(),
+        ];
+    }
+
+    private function itemToArray(PurchaseOrderItem $item): array
+    {
+        return [
+            'id' => (string) $item->id,
+            'stock_item_id' => $item->stock_item_id,
+            'name' => $item->name,
+            'qty' => (float) $item->qty,
+            'unit' => $item->unit,
+            'grade' => $item->grade,
+            'price' => $item->price,
+            'supplier' => $item->supplier?->name ?? '-',
+            'invoiced' => $item->is_invoiced,
+            'request' => $item->request_note,
+        ];
+    }
+
+    private function deliveryToArray(DeliveryNote $delivery): array
+    {
+        return [
+            'number' => $delivery->number,
+            'date' => $delivery->date->format('Y-m-d'),
+            'driver' => $delivery->driver,
+            'notes' => $delivery->notes,
+            'kepada' => $delivery->kepada,
+            'kd_sppg' => $delivery->kd_sppg,
+            'nama_sppg' => $delivery->nama_sppg,
+            'pj_sppg' => $delivery->pj_sppg,
+            'whatsapp' => $delivery->whatsapp,
+            'has_photo' => $delivery->has_photo,
+        ];
+    }
+
+    private function invoiceToArray(Invoice $invoice): array
+    {
+        return [
+            'number' => $invoice->number,
+            'date' => $invoice->date->format('Y-m-d'),
+            'supplier' => $invoice->supplier_name,
+            'status' => $invoice->status,
+            'total_amount' => $invoice->total_amount,
+            'items' => $invoice->items->map(fn ($item): array => [
+                'name' => $item->name,
+                'qty' => (float) $item->qty,
+                'unit' => $item->unit,
+                'price' => $item->price,
+            ])->all(),
+        ];
+    }
+
+    private function stockItems(): array
+    {
+        return StockItem::query()->orderBy('id')->get()->map(fn (StockItem $item): array => $this->stockItemToArray($item))->all();
+    }
+
+    private function stockItemToArray(?StockItem $item): ?array
+    {
+        if ($item === null) {
+            return null;
+        }
+
+        return [
+            'id' => (string) $item->id,
+            'name' => $item->name,
+            'unit' => $item->unit,
+            'category' => $item->category,
+            'status' => $item->status,
+        ];
     }
 
     private function orderTotal(array $order): int
     {
-        return collect($order['items'])->sum(fn (array $item): int => $item['qty'] * $item['price']);
+        return (int) collect($order['items'])->sum(fn (array $item): float|int => $item['qty'] * $item['price']);
     }
 
     private function poStats(Collection $orders): array
@@ -676,10 +854,26 @@ class ProcurementController extends Controller
 
     private function suppliers(): array
     {
-        return ['DUNIA BUMBU MOJOKERTO', 'NUTRIVA FOODS', 'VIALA PANGAN'];
+        return Supplier::query()->orderBy('name')->pluck('name')->all();
     }
 
-    private function invoiceNumberFor(string $supplier, string $poNumber): string
+    private function supplierDetails(?string $supplier): array
+    {
+        $record = Supplier::query()->where('name', $supplier)->first() ?? Supplier::query()->first();
+
+        return [
+            'name' => $record?->name ?? 'SUPPLIER',
+            'address' => $record?->address ?? '-',
+            'logo' => $record?->logo_path ?? 'logo-duniabumbu.jpeg',
+            'stamp' => $record?->stamp_path ?? 'stamp-duniabumbu.jpeg',
+            'theme' => $record?->theme_color ?? '#2563eb',
+            'bank_name' => $record?->bank_name ?? 'Mandiri',
+            'bank_account_name' => $record?->bank_account_name ?? 'ARIF RAKHMAN HADI',
+            'bank_account_number' => $record?->bank_account_number ?? '1420015180150',
+        ];
+    }
+
+    private function invoiceNumberFor(?string $supplier, string $poNumber): string
     {
         $prefix = match ($supplier) {
             'NUTRIVA FOODS' => 'NUTRIVA',
@@ -687,292 +881,22 @@ class ProcurementController extends Controller
             default => 'DUNIA',
         };
 
-        return 'INV/'.$prefix.'/'.substr(preg_replace('/\D+/', '', $poNumber), -6);
+        return 'INV/'.$prefix.'/'.substr(preg_replace('/\D+/', '', $poNumber), -6).random_int(10, 99);
     }
 
-    private function supplierDetails(string $supplier): array
+    private function nextPurchaseOrderNumber(string $prefix): string
     {
-        return match ($supplier) {
-            'NUTRIVA FOODS' => [
-                'name' => 'NUTRIVA FOODS',
-                'address' => '01/01 Pesanan Bicak Trowulan',
-                'logo' => 'logo-nutrifa.jpeg',
-                'stamp' => 'stamp-nutriva.jpeg',
-                'color' => 'orange',
-                'theme' => '#ea580c',
-            ],
-            'VIALA PANGAN' => [
-                'name' => 'VIALA PANGAN',
-                'address' => 'Perum Graha Majapahit Jl Village Ave 89',
-                'logo' => 'logo-viala.jpeg',
-                'stamp' => 'stamp-viala.jpeg',
-                'color' => 'blue',
-                'theme' => '#2563eb',
-            ],
-            default => [
-                'name' => 'DUNIA BUMBU MOJOKERTO',
-                'address' => 'GPM Bypass B1 No 4 Kota Mojokerto',
-                'logo' => 'logo-duniabumbu.jpeg',
-                'stamp' => 'stamp-duniabumbu.jpeg',
-                'color' => 'green',
-                'theme' => '#16a34a',
-            ],
-        };
+        $count = PurchaseOrder::query()->count() + 1;
+
+        return $count.'/PO/'.now()->format('dmY').'/'.$prefix.'/'.now()->format('Y');
     }
 
-    private function stockItems(): array
+    private function sppgForRequest(?string $code): Sppg
     {
-        $items = [
-            ['id' => '1', 'name' => 'AYAM FILET', 'unit' => 'KG', 'category' => 'Protein', 'status' => 'Aktif'],
-            ['id' => '2', 'name' => 'AYAM FILET', 'unit' => 'KG', 'category' => 'Protein', 'status' => 'Aktif'],
-            ['id' => '3', 'name' => 'telur ayam', 'unit' => 'BUTIR', 'category' => 'Protein', 'status' => 'Aktif'],
-            ['id' => '4', 'name' => 'daging', 'unit' => 'KG', 'category' => 'Protein', 'status' => 'Aktif'],
-            ['id' => '5', 'name' => 'roti burger', 'unit' => 'PCS', 'category' => 'Roti', 'status' => 'Aktif'],
-        ];
+        if (($this->currentUser()['role'] ?? null) === 'SPPG') {
+            return Sppg::query()->where('code', $this->currentUser()['id'])->firstOrFail();
+        }
 
-        $createdItems = session('stock_created_items', []);
-        $updates = session('stock_updates', []);
-        $deletedIds = session('stock_deleted_ids', []);
-
-        return collect($items)
-            ->concat($createdItems)
-            ->reject(fn (array $item): bool => in_array($item['id'], $deletedIds, true))
-            ->map(function (array $item) use ($updates): array {
-                if (isset($updates[$item['id']])) {
-                    $item['name'] = $updates[$item['id']]['name'];
-                    $item['unit'] = $updates[$item['id']]['unit'];
-                }
-
-                return $item;
-            })
-            ->values()
-            ->all();
-    }
-
-    private function orders(): array
-    {
-        $orders = [
-            [
-                'id' => 'po-007',
-                'number' => '7/PO/17052026/DBM/2026',
-                'date' => '2026-05-17',
-                'created_by' => 'System Manager',
-                'sppg' => 'SPPG-Balongsari',
-                'sppg_code' => 'M1101',
-                'droping_date' => null,
-                'droping_time' => null,
-                'status' => 'INVOICED',
-                'items' => [
-                    ['name' => 'AYAM FILET', 'qty' => 40, 'unit' => 'kg', 'grade' => 'A', 'price' => 10000, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => true, 'request' => 'Dada'],
-                    ['name' => 'BAWANG MERAH', 'qty' => 2, 'unit' => 'kg', 'grade' => 'A', 'price' => 0, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => true, 'request' => null],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/DBM/170526/007',
-                    'date' => '2026-05-17',
-                    'driver' => 'Rudi Hartono',
-                    'notes' => 'Diterima lengkap oleh PIC SPPG.',
-                ],
-                'invoices' => [
-                    ['number' => 'INV/DBM/721557', 'date' => '2026-05-18', 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'status' => 'UNPAID', 'total_amount' => 400000],
-                ],
-            ],
-            [
-                'id' => 'po-006',
-                'number' => '6/PO/17052026/DBM/2026',
-                'date' => '2026-05-17',
-                'created_by' => 'System Manager',
-                'sppg' => 'SPPG-Balongsari',
-                'sppg_code' => 'M1101',
-                'droping_date' => null,
-                'droping_time' => null,
-                'status' => 'INVOICED',
-                'items' => [
-                    ['name' => 'AYAM FILET', 'qty' => 20, 'unit' => 'kg', 'grade' => 'A', 'price' => 15000, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => true, 'request' => null],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/DBM/170526/006',
-                    'date' => '2026-05-17',
-                    'driver' => 'Slamet Riyadi',
-                    'notes' => 'Dalam proses pengiriman.',
-                ],
-                'invoices' => [
-                    ['number' => 'INV/DBM/721556', 'date' => '2026-05-18', 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'status' => 'UNPAID', 'total_amount' => 300000],
-                ],
-            ],
-            [
-                'id' => 'po-005',
-                'number' => '5/PO/17052026/NF/2026',
-                'date' => '2026-05-17',
-                'created_by' => 'System Manager',
-                'sppg' => 'SPPG-Balongsari',
-                'sppg_code' => 'M1101',
-                'droping_date' => '2026-05-17',
-                'droping_time' => '18:35',
-                'status' => 'COMPLETED',
-                'items' => [
-                    ['name' => 'TELUR AYAM', 'qty' => 50, 'unit' => 'butir', 'grade' => 'A', 'price' => 0, 'supplier' => 'NUTRIVA FOODS', 'invoiced' => false, 'request' => 'Yang bagus'],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/NF/170526/005',
-                    'date' => '2026-05-17',
-                    'driver' => 'Slamet Riyadi',
-                    'notes' => 'Barang diterima lengkap.',
-                ],
-                'invoices' => [],
-            ],
-            [
-                'id' => 'po-004',
-                'number' => '4/PO/17052026/DBM/2026',
-                'date' => '2026-05-17',
-                'created_by' => 'System Manager',
-                'sppg' => 'M1122',
-                'sppg_code' => 'M1101',
-                'droping_date' => '2026-05-17',
-                'droping_time' => '10:00',
-                'status' => 'INVOICED',
-                'items' => [
-                    ['name' => 'AYAM FILET', 'qty' => 100, 'unit' => 'kg', 'grade' => 'A', 'price' => 50000, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => true, 'request' => null],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/DBM/170526/004',
-                    'date' => '2026-05-17',
-                    'driver' => 'Rudi Hartono',
-                    'notes' => 'Diterima.',
-                ],
-                'invoices' => [
-                    ['number' => 'INV/DBM/721554', 'date' => '2026-05-18', 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'status' => 'UNPAID', 'total_amount' => 5000000],
-                ],
-            ],
-            [
-                'id' => 'po-003',
-                'number' => '3/PO/15052026/DBM/2026',
-                'date' => '2026-05-15',
-                'created_by' => 'System Manager',
-                'sppg' => 'M1122',
-                'sppg_code' => 'M1101',
-                'droping_date' => '2026-05-16',
-                'droping_time' => '08:00',
-                'status' => 'INVOICED',
-                'items' => [
-                    ['name' => 'AYAM FILET', 'qty' => 60, 'unit' => 'kg', 'grade' => 'A', 'price' => 86650, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => true, 'request' => null],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/DBM/150526/003',
-                    'date' => '2026-05-16',
-                    'driver' => 'Rudi Hartono',
-                    'notes' => 'Diterima.',
-                ],
-                'invoices' => [
-                    ['number' => 'INV/DBM/721553', 'date' => '2026-05-16', 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'status' => 'PAID', 'total_amount' => 5199000],
-                ],
-            ],
-            [
-                'id' => 'po-002',
-                'number' => '2/PO/12052026/DBM/2026',
-                'date' => '2026-05-12',
-                'created_by' => 'Ahmad Lutfi',
-                'sppg' => 'SPPG-Balongsari',
-                'sppg_code' => 'M1101',
-                'droping_date' => '2026-05-13',
-                'droping_time' => '06:30',
-                'status' => 'PROCESSING',
-                'items' => [
-                    ['name' => 'BAWANG MERAH', 'qty' => 2, 'unit' => 'kg', 'grade' => 'A', 'price' => 32000, 'supplier' => 'DUNIA BUMBU MOJOKERTO', 'invoiced' => false, 'request' => null],
-                ],
-                'delivery' => null,
-                'invoices' => [],
-            ],
-            [
-                'id' => 'po-001',
-                'number' => '1/PO/10052026/VPA/2026',
-                'date' => '2026-05-10',
-                'created_by' => 'Ahmad Lutfi',
-                'sppg' => 'SPPG-Balongsari',
-                'sppg_code' => 'M1101',
-                'droping_date' => '2026-05-11',
-                'droping_time' => '07:00',
-                'status' => 'COMPLETED',
-                'items' => [
-                    ['name' => 'AYAM FILET', 'qty' => 10, 'unit' => 'kg', 'grade' => 'A', 'price' => 45000, 'supplier' => 'VIALA PANGAN', 'invoiced' => false, 'request' => null],
-                    ['name' => 'TELUR AYAM', 'qty' => 120, 'unit' => 'butir', 'grade' => 'A', 'price' => 2300, 'supplier' => 'NUTRIVA FOODS', 'invoiced' => false, 'request' => null],
-                ],
-                'delivery' => [
-                    'number' => 'SJ/VPA/100526/001',
-                    'date' => '2026-05-11',
-                    'driver' => 'Rudi Hartono',
-                    'notes' => 'Diterima lengkap oleh PIC SPPG.',
-                ],
-                'invoices' => [],
-            ],
-        ];
-
-        return $this->applySessionOrderChanges($orders);
-    }
-
-    private function applySessionOrderChanges(array $orders): array
-    {
-        $deletedIds = session('po_deleted_ids', []);
-        $statusOverrides = session('po_statuses', []);
-        $supplierAssignments = session('po_supplier_assignments', []);
-        $deliveryOverrides = session('surat_jalan_overrides', []);
-        $invoiceStatuses = session('invoice_statuses', []);
-
-        return collect($orders)
-            ->reject(fn (array $order): bool => in_array($order['id'], $deletedIds, true))
-            ->map(function (array $order) use ($statusOverrides, $supplierAssignments, $deliveryOverrides): array {
-                if (isset($statusOverrides[$order['id']])) {
-                    $order['status'] = $statusOverrides[$order['id']];
-                }
-
-                if (isset($supplierAssignments[$order['id']])) {
-                    foreach ($order['items'] as $index => $item) {
-                        if (isset($supplierAssignments[$order['id']][$index])) {
-                            $order['items'][$index]['supplier'] = $supplierAssignments[$order['id']][$index];
-                        }
-                    }
-                }
-
-                if (isset($deliveryOverrides[$order['id']])) {
-                    $override = $deliveryOverrides[$order['id']];
-                    $order['delivery'] = [
-                        'number' => $override['number'],
-                        'date' => $override['date'],
-                        'driver' => $override['driver'],
-                        'notes' => $override['notes'],
-                        'kepada' => $override['kepada'],
-                        'kd_sppg' => $override['kd_sppg'],
-                        'nama_sppg' => $override['nama_sppg'],
-                        'pj_sppg' => $override['pj_sppg'],
-                        'whatsapp' => $override['whatsapp'],
-                        'has_photo' => $override['has_photo'] ?? true,
-                    ];
-
-                    foreach ($order['items'] as $index => $item) {
-                        if (isset($override['qty_actual'][$index])) {
-                            $order['items'][$index]['qty'] = (float) $override['qty_actual'][$index];
-                        }
-
-                        if (isset($override['prices'][$index])) {
-                            $order['items'][$index]['price'] = (int) $override['prices'][$index];
-                        }
-
-                        if (isset($override['suppliers'][$index])) {
-                            $order['items'][$index]['supplier'] = $override['suppliers'][$index];
-                        }
-                    }
-                }
-
-                if (isset($invoiceStatuses[$order['id']])) {
-                    foreach ($order['invoices'] as $index => $invoice) {
-                        if (isset($invoiceStatuses[$order['id']][$invoice['number']])) {
-                            $order['invoices'][$index]['status'] = $invoiceStatuses[$order['id']][$invoice['number']];
-                        }
-                    }
-                }
-
-                return $order;
-            })
-            ->values()
-            ->all();
+        return Sppg::query()->where('code', $code)->firstOrFail();
     }
 }

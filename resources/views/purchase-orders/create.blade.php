@@ -2,7 +2,8 @@
 
 @section('content')
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-4 backdrop-blur-sm">
-        <form class="mx-auto min-h-[calc(100vh-2rem)] max-w-[1440px] overflow-hidden rounded-3xl bg-slate-100 shadow-2xl">
+        <form method="POST" action="{{ route('purchase-orders.store') }}" class="mx-auto min-h-[calc(100vh-2rem)] max-w-[1440px] overflow-hidden rounded-3xl bg-slate-100 shadow-2xl">
+            @csrf
             <header class="flex items-center justify-between border-b border-slate-200 bg-white px-10 py-5">
                 <div class="flex items-center gap-4">
                     <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-lg font-black text-white">P</span>
@@ -10,7 +11,7 @@
                 </div>
                 <div class="flex items-center gap-8">
                     <a href="{{ route('purchase-orders.index') }}" class="text-sm font-black text-slate-700">Batal</a>
-                    <button type="button" class="rounded-lg bg-blue-600 px-8 py-3 text-base font-black text-white shadow-lg shadow-blue-600/25">Simpan PO</button>
+                    <button type="submit" class="rounded-lg bg-blue-600 px-8 py-3 text-base font-black text-white shadow-lg shadow-blue-600/25">Simpan PO</button>
                 </div>
             </header>
 

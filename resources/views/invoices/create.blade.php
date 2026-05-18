@@ -47,6 +47,7 @@
                             <article class="grid grid-cols-1 gap-4 rounded-2xl border border-slate-100 bg-slate-50 p-5 md:grid-cols-[1fr_140px_180px_140px] md:items-center">
                                 <input type="hidden" name="items[{{ $loop->index }}][name]" value="{{ $item['name'] }}">
                                 <input type="hidden" name="items[{{ $loop->index }}][unit]" value="{{ $item['unit'] }}">
+                                <input type="hidden" name="items[{{ $loop->index }}][id]" value="{{ $item['id'] ?? '' }}">
 
                                 <div>
                                     <p class="text-lg font-black text-slate-950">{{ $item['name'] }}</p>
