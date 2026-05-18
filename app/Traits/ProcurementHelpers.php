@@ -14,6 +14,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 trait ProcurementHelpers
@@ -166,7 +167,7 @@ trait ProcurementHelpers
         }
 
         return [
-            'base' => (string) $order->id,
+            'base' => (string) $this->nextPurchaseOrderSequence((int) now()->format('Y')),
             'date' => now()->format('dmY'),
             'year' => now()->format('Y'),
         ];
@@ -178,6 +179,32 @@ trait ProcurementHelpers
     private function purchaseOrderNumberForSupplier(array $numberParts, string $supplierName): string
     {
         return "{$numberParts['base']}/PO/{$numberParts['date']}/{$this->supplierAbbreviation($supplierName)}/{$numberParts['year']}";
+    }
+
+    private function nextPurchaseOrderSequence(int $year): int
+    {
+        DB::table('po_sequences')->insertOrIgnore([
+            'year' => $year,
+            'last_number' => 0,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $sequence = DB::table('po_sequences')
+            ->where('year', $year)
+            ->lockForUpdate()
+            ->firstOrFail();
+
+        $nextNumber = (int) $sequence->last_number + 1;
+
+        DB::table('po_sequences')
+            ->where('year', $year)
+            ->update([
+                'last_number' => $nextNumber,
+                'updated_at' => now(),
+            ]);
+
+        return $nextNumber;
     }
 
     private function requireAuth(): ?RedirectResponse

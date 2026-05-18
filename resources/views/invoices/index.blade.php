@@ -93,13 +93,14 @@
 
             <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
                 <div class="overflow-x-auto">
-                    <table class="min-w-[1050px] divide-y divide-slate-100">
+                    <table class="min-w-[1250px] divide-y divide-slate-100">
                         <thead class="bg-slate-50">
                             <tr>
                                 <th class="w-14 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">No</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">No Invoice</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Kepada</th>
+                                <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Rincian Barang</th>
                                 <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
                                 <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Aksi</th>
@@ -117,6 +118,22 @@
                                     </td>
                                     <td class="px-5 py-6 text-sm font-black uppercase text-slate-800">{{ $invoice['supplier'] }}</td>
                                     <td class="px-5 py-6 text-sm font-black uppercase text-slate-500">{{ $entry['order']['sppg'] }}</td>
+                                    <td class="px-5 py-6">
+                                        <div class="max-w-md space-y-2">
+                                            @forelse ($invoice['items'] as $item)
+                                                <div class="flex items-center justify-between gap-4 rounded-lg border border-slate-100 bg-slate-50 px-4 py-3">
+                                                    <div>
+                                                        <p class="text-sm font-black text-slate-900">{{ $item['name'] }}</p>
+                                                        <p class="mt-1 text-[10px] font-black uppercase text-slate-400">Ref: {{ $entry['order']['number'] }}</p>
+                                                        <p class="mt-1 text-[10px] font-black uppercase text-slate-400">{{ number_format($item['qty'], 0, ',', '.') }} {{ $item['unit'] }} x Rp {{ number_format($item['price'], 0, ',', '.') }}</p>
+                                                    </div>
+                                                    <p class="text-xs font-black text-emerald-600">Rp {{ number_format($item['qty'] * $item['price'], 0, ',', '.') }}</p>
+                                                </div>
+                                            @empty
+                                                <span class="text-xs font-bold text-slate-400">Belum ada rincian.</span>
+                                            @endforelse
+                                        </div>
+                                    </td>
                                     <td class="px-5 py-6 text-right text-sm font-black text-slate-950">Rp {{ number_format($invoice['total_amount'], 0, ',', '.') }}</td>
                                     <td class="px-5 py-6">
                                         @if ($currentUser['role'] === 'ADMIN')
@@ -141,7 +158,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="7" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada riwayat invoice.</td>
+                                    <td colspan="8" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada riwayat invoice.</td>
                                 </tr>
                             @endforelse
                         </tbody>

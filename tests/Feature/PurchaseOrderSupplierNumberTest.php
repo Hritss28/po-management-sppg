@@ -39,6 +39,45 @@ test('PurchaseOrderSupplier store publishes a number when supplier is entered du
         ->and($order->items()->first()->supplier->name)->toBe('VIALA PANGAN');
 });
 
+test('PurchaseOrderSupplier sequence number is not reused after deleting purchase order', function (): void {
+    $data = purchaseOrderSupplierFixture();
+
+    $this->post(route('purchase-orders.store'), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'VIALA PANGAN'],
+    ]))->assertRedirect(route('purchase-orders.index'));
+
+    $firstOrder = PurchaseOrder::query()->firstOrFail();
+    $this->delete(route('purchase-orders.destroy', $firstOrder->id))
+        ->assertRedirect(route('purchase-orders.index'));
+
+    $this->post(route('purchase-orders.store'), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['telur'], 'supplier' => 'NUTRIVA FOODS'],
+    ]))->assertRedirect(route('purchase-orders.index'));
+
+    expect(PurchaseOrder::query()->firstOrFail()->number)->toBe('2/PO/18052026/NF/2026');
+});
+
+test('PurchaseOrderSupplier sequence number resets for a new year', function (): void {
+    $data = purchaseOrderSupplierFixture();
+
+    $this->post(route('purchase-orders.store'), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['ayam'], 'supplier' => 'VIALA PANGAN'],
+    ]))->assertRedirect(route('purchase-orders.index'));
+
+    Carbon::setTestNow('2027-01-01 09:00:00');
+
+    $this->post(route('purchase-orders.store'), purchaseOrderPayload($data, [
+        ['stock' => $data['stocks']['telur'], 'supplier' => 'NUTRIVA FOODS'],
+    ]))->assertRedirect(route('purchase-orders.index'));
+
+    $numbers = PurchaseOrder::query()->orderBy('id')->pluck('number')->all();
+
+    expect($numbers)->toBe([
+        '1/PO/18052026/VP/2026',
+        '1/PO/01012027/NF/2027',
+    ]);
+});
+
 test('PurchaseOrderSupplier draft edit publishes a number when every item has supplier', function (): void {
     $data = purchaseOrderSupplierFixture();
     $order = draftPurchaseOrder($data);

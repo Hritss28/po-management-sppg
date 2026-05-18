@@ -61,6 +61,28 @@ test('invoice create shows item unit beside quantity and price inputs', function
         ->assertSeeText('Harga per KG');
 });
 
+test('invoice history shows item details', function (): void {
+    [$order, $invoice] = invoiceStatusFixture('PAID');
+    $supplier = Supplier::query()->where('name', 'VIALA PANGAN')->firstOrFail();
+
+    $invoice->items()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'BAWANG MERAH',
+        'qty' => 12,
+        'unit' => 'KG',
+        'price' => 15000,
+        'subtotal' => 180000,
+    ]);
+
+    $this->get(route('invoices.index', ['tab' => 'history']))
+        ->assertOk()
+        ->assertSeeText('Rincian Barang')
+        ->assertSeeText('BAWANG MERAH')
+        ->assertSeeText('Ref: '.$order->number)
+        ->assertSeeText('12 KG x Rp 15.000')
+        ->assertSeeText('Rp 180.000');
+});
+
 /**
  * @return array{PurchaseOrder, Invoice}
  */
