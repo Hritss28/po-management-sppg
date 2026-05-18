@@ -52,6 +52,16 @@
             ['label' => 'Selesai', 'value' => $stats['completed'], 'color' => 'bg-emerald-500'],
             ['label' => 'Tertagih', 'value' => $stats['invoiced'], 'color' => 'bg-indigo-500'],
         ];
+        $poNumberTones = [
+            'bg-violet-50 text-violet-600',
+            'bg-emerald-50 text-emerald-600',
+            'bg-blue-50 text-blue-600',
+            'bg-orange-50 text-orange-600',
+            'bg-rose-50 text-rose-600',
+            'bg-cyan-50 text-cyan-600',
+            'bg-indigo-50 text-indigo-600',
+            'bg-amber-50 text-amber-600',
+        ];
         $maxChart = max(1, collect($chartData)->max('value'));
     @endphp
 
@@ -130,12 +140,10 @@
                 <div class="space-y-5">
                     @foreach ($orders->take(6) as $order)
                         @php
-                            $tone = match ($order['status']) {
-                                'COMPLETED' => 'bg-emerald-50 text-emerald-600',
-                                'INVOICED' => 'bg-indigo-50 text-indigo-600',
-                                'PROCESSING' => 'bg-blue-50 text-blue-600',
-                                default => 'bg-orange-50 text-orange-600',
-                            };
+                            $baseNumber = is_string($order['number'] ?? null) ? (int) strtok($order['number'], '/') : 0;
+                            $tone       = $baseNumber > 0
+                                ? $poNumberTones[($baseNumber - 1) % count($poNumberTones)]
+                                : 'bg-orange-50 text-orange-600';
                         @endphp
                         <a href="{{ route('purchase-orders.show', $order['id']) }}" class="group flex gap-4">
                             <span class="relative flex flex-col items-center">
