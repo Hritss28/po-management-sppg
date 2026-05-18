@@ -145,9 +145,10 @@ class PurchaseOrderController extends Controller
             ]);
             $order->items()->delete();
             $this->syncPurchaseOrderItems($order, $validated['items']);
+            $this->publishOrResplitPurchaseOrder($order->refresh());
         });
 
-        return redirect()->route('purchase-orders.show', $order->id)->with('success', 'PO berhasil diperbarui.');
+        return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil diperbarui.');
     }
 
     public function updateStatus(Request $request, string $id): RedirectResponse
@@ -187,59 +188,18 @@ class PurchaseOrderController extends Controller
         $splitCount = 0;
 
         DB::transaction(function () use ($order, $validated, &$splitCount): void {
-            // 1. Update supplier_id setiap item sesuai urutan input form
+            $items = $order->items()->orderBy('id')->get();
+
             foreach (array_values($validated['suppliers']) as $index => $supplierName) {
                 $supplier = $supplierName
                     ? Supplier::query()->where('name', $supplierName)->first()
                     : null;
 
-                $order->items()->skip($index)->first()?->update(['supplier_id' => $supplier?->id]);
+                $items->get($index)?->update(['supplier_id' => $supplier?->id]);
             }
 
-            // 2. Reload items beserta relasi supplier
-            $order->refresh()->load('items.supplier');
+            $splitCount = $this->publishOrResplitPurchaseOrder($order->refresh());
 
-            $assignedItems = $order->items->filter(fn ($item) => $item->supplier_id !== null);
-            $unassignedItems = $order->items->filter(fn ($item) => $item->supplier_id === null);
-
-            // Jika belum ada yang di-assign, tidak ada yang perlu dilakukan
-            if ($assignedItems->isEmpty()) {
-                return;
-            }
-
-            // 3. Kelompokkan item yang sudah di-assign berdasarkan supplier_id
-            //    lalu buat PO baru per supplier dengan nomor unik masing-masing
-            $compactDate = now()->format('dmY');
-            $year = now()->format('Y');
-
-            foreach ($assignedItems->groupBy('supplier_id') as $items) {
-                $supplierName = $items->first()->supplier->name;
-                $abbr = $this->supplierAbbreviation($supplierName);
-
-                // Format nomor: {id_po_asli}/PO/{DDMMYYYY}/{ABBR}/{YEAR}
-                // Contoh: 5/PO/18052026/DBM/2026
-                $number = "{$order->id}/PO/{$compactDate}/{$abbr}/{$year}";
-
-                $newOrder = PurchaseOrder::query()->create([
-                    'number' => $number,
-                    'date' => $order->date,
-                    'created_by' => $order->created_by,
-                    'sppg_id' => $order->sppg_id,
-                    'droping_date' => $order->droping_date,
-                    'droping_time' => $order->droping_time,
-                    'status' => 'PROCESSING',
-                ]);
-
-                // Pindahkan item ke PO baru
-                $items->each(fn ($item) => $item->update(['purchase_order_id' => $newOrder->id]));
-                $splitCount++;
-            }
-
-            // 4. Jika semua item sudah dipindahkan → hapus PO asli (sudah tidak punya item)
-            //    Jika masih ada item unassigned → PO asli tetap hidup (VALID, tanpa nomor)
-            if ($unassignedItems->isEmpty()) {
-                $order->delete();
-            }
         });
 
         $message = $splitCount > 0

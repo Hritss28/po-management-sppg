@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 trait ProcurementHelpers
 {
@@ -61,6 +62,108 @@ trait ProcurementHelpers
                 'is_invoiced' => false,
             ]);
         }
+    }
+
+    private function publishOrResplitPurchaseOrder(PurchaseOrder $order): int
+    {
+        $items = $order->items()->with('supplier')->orderBy('id')->get();
+
+        if ($items->isEmpty()) {
+            return 0;
+        }
+
+        $hasPublishedNumber = filled($order->number);
+        $hasUnassignedSupplier = $items->contains(fn (PurchaseOrderItem $item): bool => $item->supplier_id === null);
+
+        if ($hasPublishedNumber && $hasUnassignedSupplier) {
+            throw ValidationException::withMessages([
+                'suppliers' => 'Semua item pada PO yang sudah terbit wajib memiliki supplier.',
+            ]);
+        }
+
+        if (! $hasPublishedNumber && $hasUnassignedSupplier) {
+            $order->update([
+                'number' => null,
+                'status' => 'VALID',
+            ]);
+
+            return 0;
+        }
+
+        $numberParts = $this->purchaseOrderNumberParts($order);
+        $supplierGroups = $items->groupBy('supplier_id')->values();
+        $createdOrders = 0;
+        $usesSourceOrder = false;
+
+        foreach ($supplierGroups as $supplierItems) {
+            /** @var Collection<int, PurchaseOrderItem> $supplierItems */
+            $supplierName = $supplierItems->first()->supplier->name;
+            $number = $this->purchaseOrderNumberForSupplier($numberParts, $supplierName);
+            $existingOrder = PurchaseOrder::query()
+                ->where('number', $number)
+                ->first();
+
+            if ($existingOrder !== null && ! $existingOrder->is($order)) {
+                $targetOrder = $existingOrder;
+            } elseif (! $usesSourceOrder) {
+                $targetOrder = $order;
+                $targetOrder->update([
+                    'number' => $number,
+                    'status' => 'PROCESSING',
+                ]);
+                $usesSourceOrder = true;
+            } else {
+                $targetOrder = PurchaseOrder::query()->create([
+                    'number' => $number,
+                    'date' => $order->date,
+                    'created_by' => $order->created_by,
+                    'sppg_id' => $order->sppg_id,
+                    'droping_date' => $order->droping_date,
+                    'droping_time' => $order->droping_time,
+                    'status' => 'PROCESSING',
+                ]);
+
+                $createdOrders++;
+            }
+
+            $supplierItems->each(fn (PurchaseOrderItem $item): bool => $item->update([
+                'purchase_order_id' => $targetOrder->id,
+            ]));
+        }
+
+        if (! $usesSourceOrder && $order->items()->doesntExist()) {
+            $order->delete();
+        }
+
+        return $createdOrders;
+    }
+
+    /**
+     * @return array{base: string, date: string, year: string}
+     */
+    private function purchaseOrderNumberParts(PurchaseOrder $order): array
+    {
+        if (is_string($order->number) && preg_match('/^([^\/]+)\/PO\/([^\/]+)\/[^\/]+\/([^\/]+)$/', $order->number, $matches) === 1) {
+            return [
+                'base' => $matches[1],
+                'date' => $matches[2],
+                'year' => $matches[3],
+            ];
+        }
+
+        return [
+            'base' => (string) $order->id,
+            'date' => now()->format('dmY'),
+            'year' => now()->format('Y'),
+        ];
+    }
+
+    /**
+     * @param  array{base: string, date: string, year: string}  $numberParts
+     */
+    private function purchaseOrderNumberForSupplier(array $numberParts, string $supplierName): string
+    {
+        return "{$numberParts['base']}/PO/{$numberParts['date']}/{$this->supplierAbbreviation($supplierName)}/{$numberParts['year']}";
     }
 
     private function requireAuth(): ?RedirectResponse
