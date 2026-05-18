@@ -157,6 +157,8 @@ trait ProcurementHelpers
             'pj_sppg' => $delivery->pj_sppg,
             'whatsapp' => $delivery->whatsapp,
             'has_photo' => $delivery->has_photo,
+            'proof_photo' => $delivery->proof_photo,
+            'item_photos' => $delivery->item_photos ?? [],
         ];
     }
 

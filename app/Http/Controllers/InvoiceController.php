@@ -196,6 +196,8 @@ class InvoiceController extends Controller
             ->where('number', $request->string('invoice')->toString())
             ->first();
         $supplierName = $request->string('supplier')->toString() ?: ($invoice?->supplier_name ?? $order->items->first()?->supplier?->name);
+        $requestItems = $request->input('items', []);
+
         $items = $invoice
             ? $invoice->items->map(fn ($item): array => [
                 'name' => $item->name,
@@ -203,7 +205,17 @@ class InvoiceController extends Controller
                 'unit' => $item->unit,
                 'price' => $item->price,
             ])
-            : $order->items->where('supplier.name', $supplierName)->map(fn (PurchaseOrderItem $item): array => $this->itemToArray($item))->values();
+            : $order->items->where('supplier.name', $supplierName)->map(function (PurchaseOrderItem $item) use ($requestItems): array {
+                $itemArray = $this->itemToArray($item);
+
+                $reqItem = collect($requestItems)->firstWhere('id', (string) $item->id);
+                if ($reqItem) {
+                    $itemArray['price'] = (float) preg_replace('/\D+/', '', $reqItem['price'] ?? 0);
+                    $itemArray['qty'] = (float) ($reqItem['qty'] ?? $item->qty);
+                }
+
+                return $itemArray;
+            })->values();
         $invoiceArray = $invoice ? $this->invoiceToArray($invoice) : [
             'number' => $this->invoiceNumberFor($supplierName, $order->number),
             'date' => now()->format('Y-m-d'),
