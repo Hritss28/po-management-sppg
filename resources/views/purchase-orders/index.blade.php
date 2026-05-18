@@ -10,7 +10,9 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Nilai PO</p>
                         <p class="mt-3 text-2xl font-black tracking-tight text-slate-950">Rp {{ number_format($stats['total_value'], 0, ',', '.') }}</p>
                     </div>
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-lg font-black text-emerald-600">↗</span>
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
+                        @include('partials.icon', ['name' => 'trending-up', 'class' => 'h-5 w-5'])
+                    </span>
                 </div>
             </article>
 
@@ -21,7 +23,9 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">PO Aktif</p>
                         <p class="mt-3 text-2xl font-black tracking-tight text-slate-950">{{ $stats['active'] }}</p>
                     </div>
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-sm font-black text-blue-600">◷</span>
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        @include('partials.icon', ['name' => 'clock', 'class' => 'h-5 w-5'])
+                    </span>
                 </div>
             </article>
 
@@ -32,7 +36,9 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Valid</p>
                         <p class="mt-3 text-2xl font-black tracking-tight text-slate-950">{{ $stats['valid'] }}</p>
                     </div>
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-sm font-black text-orange-600">◇</span>
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-orange-600">
+                        @include('partials.icon', ['name' => 'box', 'class' => 'h-5 w-5'])
+                    </span>
                 </div>
             </article>
 
@@ -43,7 +49,9 @@
                         <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Selesai</p>
                         <p class="mt-3 text-2xl font-black tracking-tight text-slate-950">{{ $stats['completed'] }}</p>
                     </div>
-                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-sm font-black text-indigo-600">✓</span>
+                    <span class="flex h-11 w-11 items-center justify-center rounded-xl bg-indigo-50 text-indigo-600">
+                        @include('partials.icon', ['name' => 'check-circle', 'class' => 'h-5 w-5'])
+                    </span>
                 </div>
             </article>
         </div>
