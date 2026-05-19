@@ -11,8 +11,11 @@
                 PO Baru
             </a>
         @endunless
-        <button type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50">
-            Ekspor
-        </button>
+
+        @if (($currentUser['role'] ?? null) === 'ADMIN' && ! request()->routeIs('dashboard'))
+            <button type="button" class="rounded-lg border border-slate-200 px-4 py-2 text-xs font-bold text-slate-600 transition hover:bg-slate-50">
+                Ekspor
+            </button>
+        @endif
     </div>
 </header>

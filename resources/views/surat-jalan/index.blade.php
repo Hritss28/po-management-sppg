@@ -23,7 +23,7 @@
                             <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Barang & Qty</th>
                             <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Info Pengiriman</th>
                             <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Bukti Drop</th>
-                            <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Opsi</th>
+                            <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{{ $currentUser['role'] === 'ADMIN' ? 'Opsi' : 'Detail' }}</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -78,14 +78,18 @@
                                 <td class="px-5 py-7 text-right">
                                     @if ($hasDelivery)
                                         <a href="{{ route('surat-jalan.show', $order['id']) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
-                                            Lihat / Edit
+                                            {{ $currentUser['role'] === 'ADMIN' ? 'Lihat / Edit' : 'Lihat' }}
                                             <span class="text-sm">›</span>
                                         </a>
                                     @else
+                                        @if ($currentUser['role'] === 'ADMIN')
                                         <a href="{{ route('surat-jalan.show', $order['id']) }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">
                                             Proses Kirim
                                             <span class="text-sm">›</span>
                                         </a>
+                                        @else
+                                            <span class="text-xs font-black uppercase tracking-wider text-slate-300">Belum Terbit</span>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>

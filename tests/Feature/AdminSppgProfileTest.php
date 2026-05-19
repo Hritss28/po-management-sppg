@@ -1,7 +1,11 @@
 <?php
 
+use App\Models\DeliveryNote;
+use App\Models\Invoice;
 use App\Models\PurchaseOrder;
 use App\Models\Sppg;
+use App\Models\StockItem;
+use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
@@ -105,3 +109,130 @@ test('admin profile rejects wrong current password', function (): void {
 
     expect(Hash::check('secret123', $this->admin->refresh()->password))->toBeTrue();
 });
+
+test('sppg role sees surat jalan as read only', function (): void {
+    $order = readOnlyRoleOrder();
+
+    DeliveryNote::query()->create([
+        'purchase_order_id' => $order->id,
+        'number' => '1/SJ/19052026/VP/2026',
+        'date' => '2026-05-19',
+        'driver' => 'Udin',
+        'kepada' => 'SPPG Balongsari',
+        'kd_sppg' => 'M1101',
+        'nama_sppg' => 'SPPG Balongsari',
+        'pj_sppg' => 'Datok',
+        'whatsapp' => '0894334444',
+        'notes' => 'Aman',
+        'item_photos' => [],
+        'has_photo' => false,
+    ]);
+
+    $this->withSession([
+        'auth_user' => [
+            'role' => 'SPPG',
+            'id' => 'M1101',
+            'name' => 'SPPG Balongsari',
+        ],
+    ]);
+
+    $this->get(route('surat-jalan.index'))
+        ->assertOk()
+        ->assertSeeText('Lihat')
+        ->assertDontSeeText('Lihat / Edit')
+        ->assertDontSeeText('Proses Kirim');
+
+    $this->get(route('surat-jalan.show', $order->id))
+        ->assertOk()
+        ->assertDontSeeText('Cetak PDF')
+        ->assertDontSeeText('Simpan & Terbitkan Surat Jalan')
+        ->assertDontSeeText('Hapus & Ganti Foto')
+        ->assertDontSeeText('Ambil / Pilih Foto');
+});
+
+test('sppg role sees invoice menu without create print or edit controls', function (): void {
+    $order = readOnlyRoleOrder();
+    $supplier = Supplier::query()->where('name', 'VIALA PANGAN')->firstOrFail();
+
+    $invoice = Invoice::query()->create([
+        'purchase_order_id' => $order->id,
+        'supplier_id' => $supplier->id,
+        'number' => 'INV/VIALA/123456',
+        'date' => '2026-05-19',
+        'supplier_name' => $supplier->name,
+        'status' => 'UNPAID',
+        'total_amount' => 100000,
+    ]);
+
+    $invoice->items()->create([
+        'name' => 'BAWANG MERAH',
+        'qty' => 5,
+        'unit' => 'KG',
+        'price' => 20000,
+        'subtotal' => 100000,
+    ]);
+
+    $this->withSession([
+        'auth_user' => [
+            'role' => 'SPPG',
+            'id' => 'M1101',
+            'name' => 'SPPG Balongsari',
+        ],
+    ]);
+
+    $this->get(route('invoices.index'))
+        ->assertOk()
+        ->assertDontSeeText('Buat Invoice');
+
+    $this->get(route('invoices.index', ['tab' => 'history']))
+        ->assertOk()
+        ->assertDontSeeText('Cetak')
+        ->assertDontSee('name="status"', false);
+});
+
+test('sppg role can see po create shortcut without export action', function (): void {
+    $this->withSession([
+        'auth_user' => [
+            'role' => 'SPPG',
+            'id' => 'M1101',
+            'name' => 'SPPG Balongsari',
+        ],
+    ]);
+
+    $this->get(route('surat-jalan.index'))
+        ->assertOk()
+        ->assertSeeText('PO Baru')
+        ->assertDontSeeText('Ekspor');
+});
+
+function readOnlyRoleOrder(): PurchaseOrder
+{
+    $sppg = Sppg::query()->create([
+        'code' => 'M1101',
+        'name' => 'SPPG Balongsari',
+        'location' => 'Mojokerto',
+    ]);
+
+    $supplier = Supplier::query()->create(['name' => 'VIALA PANGAN']);
+    $stock = StockItem::query()->create(['name' => 'BAWANG MERAH', 'unit' => 'KG']);
+
+    $order = PurchaseOrder::query()->create([
+        'number' => '1/PO/19052026/VP/2026',
+        'date' => '2026-05-19',
+        'created_by' => 'admin',
+        'sppg_id' => $sppg->id,
+        'status' => 'INVOICED',
+    ]);
+
+    $order->items()->create([
+        'stock_item_id' => $stock->id,
+        'supplier_id' => $supplier->id,
+        'name' => $stock->name,
+        'qty' => 5,
+        'unit' => $stock->unit,
+        'grade' => 'A',
+        'price' => 20000,
+    ]);
+
+    return $order;
+}

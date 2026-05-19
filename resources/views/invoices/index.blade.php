@@ -21,7 +21,9 @@
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Supplier & Referensi</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Info Item</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Rincian Barang</th>
-                                <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Aksi</th>
+                                @if ($currentUser['role'] === 'ADMIN')
+                                    <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -50,16 +52,18 @@
                                             @endforeach
                                         </div>
                                     </td>
+                                    @if ($currentUser['role'] === 'ADMIN')
                                     <td class="px-5 py-7 text-right">
                                         <a href="{{ route('invoices.create', ['id' => $entry['order']['id'], 'supplier' => $entry['supplier']]) }}" class="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-3 text-[10px] font-black uppercase tracking-wider text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">
                                             Buat Invoice
                                             <span class="text-sm">›</span>
                                         </a>
                                     </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada tagihan yang siap direkap.</td>
+                                    <td colspan="{{ $currentUser['role'] === 'ADMIN' ? 5 : 4 }}" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada tagihan yang siap direkap.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -103,7 +107,9 @@
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Rincian Barang</th>
                                 <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total</th>
                                 <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                                <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Aksi</th>
+                                @if ($currentUser['role'] === 'ADMIN')
+                                    <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Aksi</th>
+                                @endif
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -150,15 +156,17 @@
                                             @include('partials.status-badge', ['status' => $invoice['status']])
                                         @endif
                                     </td>
-                                    <td class="px-5 py-6 text-right">
-                                        <a href="{{ route('invoices.preview', ['id' => $entry['order']['id'], 'invoice' => $invoice['number'], 'supplier' => $invoice['supplier']]) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
-                                            Cetak
-                                        </a>
-                                    </td>
+                                    @if ($currentUser['role'] === 'ADMIN')
+                                        <td class="px-5 py-6 text-right">
+                                            <a href="{{ route('invoices.preview', ['id' => $entry['order']['id'], 'invoice' => $invoice['number'], 'supplier' => $invoice['supplier']]) }}" class="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-[10px] font-black uppercase tracking-wider text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                                                Cetak
+                                            </a>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada riwayat invoice.</td>
+                                    <td colspan="{{ $currentUser['role'] === 'ADMIN' ? 8 : 7 }}" class="px-5 py-12 text-center text-sm font-bold text-slate-400">Belum ada riwayat invoice.</td>
                                 </tr>
                             @endforelse
                         </tbody>

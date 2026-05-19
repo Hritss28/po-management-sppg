@@ -4,6 +4,7 @@
     @php
         $delivery    = $order['delivery'] ?? [];
         $hasDelivery = ! empty($order['delivery']);
+        $isAdmin     = ($currentUser['role'] ?? null) === 'ADMIN';
 
         $firstSupplier = collect($order['items'])->pluck('supplier')->filter(fn ($s) => $s !== '-')->first() ?? '-';
         $sjNumber      = $delivery['number'] ?? $order['delivery_suggested_number'];
@@ -20,7 +21,7 @@
         $driver       = $delivery['driver'] ?? '';
         $notes        = $delivery['notes']  ?? '';
 
-        $title = $hasDelivery ? 'Detail Surat Jalan: '.$sjNumber : 'Buat Surat Jalan: '.$order['number'];
+        $title = $hasDelivery || ! $isAdmin ? 'Detail Surat Jalan: '.$sjNumber : 'Buat Surat Jalan: '.$order['number'];
     @endphp
 
 
@@ -39,7 +40,9 @@
                     <h1 class="text-2xl font-black tracking-tight text-slate-950">{{ $title }}</h1>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</button>
+                    @if ($isAdmin)
+                        <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</button>
+                    @endif
                     <a href="{{ route('surat-jalan.index') }}" class="text-3xl leading-none text-slate-400 hover:text-slate-700">×</a>
                 </div>
             </header>
@@ -56,43 +59,43 @@
                     <div class="space-y-6">
                         <label class="block">
                             <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Kepada</span>
-                            <input name="kepada" value="{{ $kepada }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                            <input name="kepada" value="{{ $kepada }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                         </label>
                         <div class="grid grid-cols-2 gap-4">
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">KD SPPG</span>
-                                <input name="kd_sppg" value="{{ $kdSppg }}" placeholder="Kode SPPG" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="kd_sppg" value="{{ $kdSppg }}" @readonly(! $isAdmin) placeholder="Kode SPPG" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Nama SPPG</span>
-                                <input name="nama_sppg" value="{{ $namaSppg }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="nama_sppg" value="{{ $namaSppg }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">PJ SPPG</span>
-                                <input name="pj_sppg" value="{{ $pjSppg }}" placeholder="Penanggung Jawab" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="pj_sppg" value="{{ $pjSppg }}" @readonly(! $isAdmin) placeholder="Penanggung Jawab" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">No. WhatsApp</span>
-                                <input name="whatsapp" value="{{ $whatsapp }}" placeholder="0812..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="whatsapp" value="{{ $whatsapp }}" @readonly(! $isAdmin) placeholder="0812..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                         </div>
                         <label class="block">
                             <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">No Surat Jalan</span>
-                            <input name="surat_jalan_no" value="{{ $sjNumber }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                            <input name="surat_jalan_no" value="{{ $sjNumber }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                         </label>
                         <div class="grid grid-cols-2 gap-4">
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Tanggal Kirim</span>
-                                <input name="delivery_date" type="date" value="{{ $deliveryDate }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="delivery_date" type="date" value="{{ $deliveryDate }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Nama Driver/Kurir</span>
-                                <input name="driver" value="{{ $driver }}" placeholder="Nama Pengirim" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
+                                <input name="driver" value="{{ $driver }}" @readonly(! $isAdmin) placeholder="Nama Pengirim" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                             </label>
                         </div>
                         <label class="block">
                             <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Keterangan Barang Terkirim</span>
-                            <textarea name="notes" rows="4" placeholder="Contoh: Barang telah diterima lengkap sesuai PO..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">{{ $notes }}</textarea>
+                            <textarea name="notes" rows="4" @readonly(! $isAdmin) placeholder="Contoh: Barang telah diterima lengkap sesuai PO..." class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">{{ $notes }}</textarea>
                         </label>
                     </div>
                 </section>
@@ -113,9 +116,11 @@
                                 <div id="main-proof-placeholder" class="hidden h-full w-full items-center justify-center rounded-xl bg-slate-100 text-4xl text-slate-300">□</div>
                             @endif
                             
+                            @if ($isAdmin)
                             <button type="button" id="btn-remove-main" class="hidden absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 focus:outline-none" title="Batal Pilih Foto">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                             </button>
+                            @endif
                         </div>
                         
                         <div id="main-proof-texts" class="{{ $proofPhoto ? 'hidden' : 'block' }}">
@@ -123,13 +128,16 @@
                             <p class="mt-2 text-xs font-semibold text-slate-500">Gunakan foto dokumen fisik SJ atau foto barang saat di drop.</p>
                         </div>
 
-                        <label id="lbl-upload-main" class="{{ $proofPhoto ? 'mt-4 w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-500 inline-flex cursor-pointer items-center justify-center transition hover:bg-rose-100' : 'mt-5 inline-flex cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-7 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700' }}">
-                            <span id="lbl-upload-main-text">{{ $proofPhoto ? 'Hapus & Ganti Foto' : 'Ambil / Pilih Foto' }}</span>
-                            <input type="file" name="proof_photo" accept="image/*" class="hidden" id="main-photo-input">
-                        </label>
+                        @if ($isAdmin)
+                            <label id="lbl-upload-main" class="{{ $proofPhoto ? 'mt-4 w-full rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-black text-rose-500 inline-flex cursor-pointer items-center justify-center transition hover:bg-rose-100' : 'mt-5 inline-flex cursor-pointer items-center justify-center rounded-lg bg-blue-600 px-7 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700' }}">
+                                <span id="lbl-upload-main-text">{{ $proofPhoto ? 'Hapus & Ganti Foto' : 'Ambil / Pilih Foto' }}</span>
+                                <input type="file" name="proof_photo" accept="image/*" class="hidden" id="main-photo-input">
+                            </label>
+                        @endif
                         <span id="lbl-main-filename" class="mt-2 block w-full truncate text-xs font-semibold text-emerald-600"></span>
                     </div>
 
+                    @if ($isAdmin)
                     <div class="rounded-2xl bg-emerald-600 p-7 text-white shadow-2xl shadow-emerald-500/20">
                         <div class="flex items-center gap-4">
                             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
@@ -141,6 +149,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </section>
             </div>
 
@@ -166,16 +175,16 @@
                                 @php $existingPhoto = $order['delivery']['item_photos'][$itemIdx] ?? null; @endphp
                                 <tr>
                                     <td class="px-7 py-5 text-base font-black text-slate-900">{{ $item['name'] }}</td>
-                                    <td class="px-7 py-5"><input name="qty_actual[]" type="number" value="{{ $item['qty'] }}" class="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-800 outline-none focus:border-blue-500"></td>
+                                    <td class="px-7 py-5"><input name="qty_actual[]" type="number" value="{{ $item['qty'] }}" @readonly(! $isAdmin) class="w-24 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-800 outline-none focus:border-blue-500"></td>
                                     <td class="px-7 py-5 text-xs font-black uppercase text-slate-500">{{ $item['unit'] }}</td>
                                     <td class="px-7 py-5">
                                         <div class="flex w-36 items-center rounded-lg border border-slate-200 bg-white px-3 py-2 focus-within:border-blue-500 focus-within:ring-4 focus-within:ring-blue-500/10">
                                             <span class="mr-2 text-xs font-black text-slate-400">Rp.</span>
-                                            <input name="prices[]" type="text" inputmode="numeric" data-currency-input value="{{ $item['price'] }}" class="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
+                                            <input name="prices[]" type="text" inputmode="numeric" data-currency-input value="{{ $item['price'] }}" @readonly(! $isAdmin) class="min-w-0 flex-1 bg-transparent text-sm font-black text-slate-800 outline-none">
                                         </div>
                                     </td>
                                     <td class="px-7 py-5">
-                                        <select name="suppliers[]" class="w-52 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black uppercase text-slate-800 outline-none focus:border-blue-500">
+                                        <select name="suppliers[]" @disabled(! $isAdmin) class="w-52 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black uppercase text-slate-800 outline-none focus:border-blue-500">
                                             @foreach ($suppliers as $supplier)
                                                 <option value="{{ $supplier }}" @selected($item['supplier'] === $supplier)>{{ $supplier }}</option>
                                             @endforeach
@@ -192,14 +201,18 @@
                                                     <img id="img-preview-{{ $itemIdx }}" src="#" alt="Preview" class="hidden h-full w-full rounded-lg object-cover border border-slate-200 shadow-sm" data-original="">
                                                     <div id="img-placeholder-{{ $itemIdx }}" class="flex h-full w-full items-center justify-center rounded-lg border border-dashed border-slate-300 bg-slate-50 text-[10px] font-black text-slate-300">FOTO</div>
                                                 @endif
+                                                @if ($isAdmin)
                                                 <button type="button" id="btn-remove-{{ $itemIdx }}" class="hidden absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-md hover:bg-red-600 focus:outline-none" title="Batal Pilih Foto">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>
                                                 </button>
+                                                @endif
                                             </div>
-                                            <label id="lbl-upload-{{ $itemIdx }}" class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-blue-600 transition hover:border-blue-200 hover:bg-blue-100">
-                                                {{ $existingPhoto ? 'Ganti' : 'Upload' }}
-                                                <input type="file" name="item_photos[{{ $itemIdx }}]" accept="image/*" class="hidden photo-input" data-idx="{{ $itemIdx }}">
-                                            </label>
+                                            @if ($isAdmin)
+                                                <label id="lbl-upload-{{ $itemIdx }}" class="inline-flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-black uppercase tracking-wider text-blue-600 transition hover:border-blue-200 hover:bg-blue-100">
+                                                    {{ $existingPhoto ? 'Ganti' : 'Upload' }}
+                                                    <input type="file" name="item_photos[{{ $itemIdx }}]" accept="image/*" class="hidden photo-input" data-idx="{{ $itemIdx }}">
+                                                </label>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>
@@ -215,7 +228,9 @@
                 <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pastikan data barang sudah benar sebelum disimpan.</p>
                 <div class="flex items-center gap-6">
                     <a href="{{ route('surat-jalan.index') }}" class="text-sm font-black text-slate-700">Batal</a>
-                    <button type="submit" class="rounded-lg bg-blue-600 px-9 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20">Simpan & Terbitkan Surat Jalan</button>
+                    @if ($isAdmin)
+                        <button type="submit" class="rounded-lg bg-blue-600 px-9 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20">Simpan & Terbitkan Surat Jalan</button>
+                    @endif
                 </div>
             </footer>
         </form>
