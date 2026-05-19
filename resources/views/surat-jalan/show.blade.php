@@ -42,6 +42,8 @@
                 <div class="flex items-center gap-3">
                     @if ($isAdmin)
                         <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100">Cetak PDF</button>
+                    @else
+                        <a href="{{ route('surat-jalan.preview', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100">Cetak PDF</a>
                     @endif
                     <a href="{{ route('surat-jalan.index') }}" class="text-2xl leading-none text-slate-400 hover:text-slate-700">×</a>
                 </div>

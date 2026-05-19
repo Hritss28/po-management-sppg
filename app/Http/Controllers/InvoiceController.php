@@ -24,8 +24,10 @@ class InvoiceController extends Controller
         }
 
         $orders = $this->visibleOrdersQuery()->latest('id')->get();
+        $visibleOrderIds = $orders->pluck('id');
         $historyInvoices = Invoice::query()
             ->with(['purchaseOrder.sppg', 'items', 'supplier'])
+            ->whereIn('purchase_order_id', $visibleOrderIds)
             ->latest('id')
             ->get()
             ->map(fn (Invoice $invoice): array => [

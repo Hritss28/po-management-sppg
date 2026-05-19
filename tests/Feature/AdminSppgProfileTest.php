@@ -144,13 +144,14 @@ test('sppg role sees surat jalan as read only', function (): void {
 
     $this->get(route('surat-jalan.show', $order->id))
         ->assertOk()
-        ->assertDontSeeText('Cetak PDF')
+        ->assertSeeText('Cetak PDF')
+        ->assertSee(route('surat-jalan.preview', $order->id), false)
         ->assertDontSeeText('Simpan & Terbitkan Surat Jalan')
         ->assertDontSeeText('Hapus & Ganti Foto')
         ->assertDontSeeText('Ambil / Pilih Foto');
 });
 
-test('sppg role sees invoice menu without create print or edit controls', function (): void {
+test('sppg role sees invoice menu with print but without create or edit controls', function (): void {
     $order = readOnlyRoleOrder();
     $supplier = Supplier::query()->where('name', 'VIALA PANGAN')->firstOrFail();
 
@@ -186,8 +187,15 @@ test('sppg role sees invoice menu without create print or edit controls', functi
 
     $this->get(route('invoices.index', ['tab' => 'history']))
         ->assertOk()
-        ->assertDontSeeText('Cetak')
+        ->assertSeeText('Cetak')
+        ->assertSee('/invoices/'.$order->id.'/preview', false)
+        ->assertSee('invoice=INV%2FVIALA%2F123456', false)
+        ->assertSee('supplier=VIALA%20PANGAN', false)
         ->assertDontSee('name="status"', false);
+
+    $this->get(route('invoices.preview', ['id' => $order->id, 'invoice' => $invoice->number, 'supplier' => $supplier->name]))
+        ->assertOk()
+        ->assertSeeText($invoice->number);
 });
 
 test('sppg role can see po create shortcut without export action', function (): void {
