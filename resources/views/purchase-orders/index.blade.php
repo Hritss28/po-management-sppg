@@ -76,15 +76,15 @@
                 <table class="min-w-[1180px] divide-y divide-slate-100">
                     <thead class="bg-slate-50">
                         <tr>
-                            <th class="w-14 px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">No</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identitas PO</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Barang & Request</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Qty & Satuan</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">SPPG</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Droping</th>
-                            <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Finansial</th>
-                            <th class="px-5 py-4 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
-                            <th class="px-5 py-4 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Opsi</th>
+                            <th class="w-12 px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">No</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Identitas PO</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Barang & Request</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Qty & Satuan</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">SPPG</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Droping</th>
+                            <th class="px-3 py-2.5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Finansial</th>
+                            <th class="px-3 py-2.5 text-left text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Status</th>
+                            <th class="px-3 py-2.5 text-right text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Opsi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -102,19 +102,19 @@
                                 $isLocked        = in_array($order['status'], ['COMPLETED', 'INVOICED'], true);
                             @endphp
                             <tr class="hover:bg-slate-50/70">
-                                <td class="px-5 py-5 text-center text-xs font-black text-slate-400">{{ $sequence }}</td>
-                                <td class="px-5 py-5">
+                                <td class="px-3 py-2.5 text-center text-xs font-black text-slate-400">{{ $sequence }}</td>
+                                <td class="px-3 py-2.5">
                                     @if ($order['number'])
                                         <a href="{{ route('purchase-orders.show', $order['id']) }}" class="block max-w-64 truncate text-xs font-black text-slate-950">{{ $order['number'] }}</a>
                                     @else
                                         <a href="{{ route('purchase-orders.show', $order['id']) }}" class="block max-w-64 truncate text-xs font-black italic text-slate-400">Menunggu Validasi</a>
                                     @endif
-                                    <div class="mt-2 flex items-center gap-2">
-                                        <span class="rounded bg-blue-50 px-2 py-1 text-[9px] font-black uppercase tracking-wider text-blue-600">{{ $order['created_by'] }}</span>
+                                    <div class="mt-1 flex items-center gap-2">
+                                        <span class="rounded bg-blue-50 px-2 py-0.5 text-[9px] font-black uppercase tracking-wider text-blue-600">{{ $order['created_by'] }}</span>
                                         <span class="text-[10px] font-black text-slate-400">{{ date('m/d/Y', strtotime($order['date'])) }}</span>
                                     </div>
                                 </td>
-                                <td class="px-5 py-5">
+                                <td class="px-3 py-2.5">
                                     <p class="max-w-56 truncate text-xs font-black uppercase text-slate-900">
                                         {{ $firstItem['name'] }}
                                         @if ($remaining > 0)
@@ -136,13 +136,13 @@
                                         <p class="mt-1 text-[9px] font-black uppercase text-rose-500">No Supplier</p>
                                     @endif
                                 </td>
-                                <td class="px-5 py-5 text-xs font-black text-slate-900">
+                                <td class="px-3 py-2.5 text-xs font-black text-slate-900">
                                     {{ collect($order['items'])->sum('qty') }} <span class="text-[10px] uppercase text-slate-400">{{ $firstItem['unit'] }}</span>
                                 </td>
-                                <td class="px-5 py-5">
+                                <td class="px-3 py-2.5">
                                     <span class="inline-flex max-w-40 rounded border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-700">{{ $order['sppg'] }}</span>
                                 </td>
-                                <td class="px-5 py-5 text-xs font-black text-slate-700">
+                                <td class="px-3 py-2.5 text-xs font-black text-slate-700">
                                     @if ($order['droping_date'])
                                         <span class="block">{{ $order['droping_date'] }}</span>
                                         <span class="block text-[10px] text-slate-400">{{ $order['droping_time'] }}</span>
@@ -151,7 +151,7 @@
                                         <span class="block text-slate-400">-</span>
                                     @endif
                                 </td>
-                                <td class="px-5 py-5 text-right text-xs font-black text-slate-950">Rp {{ number_format($total, 0, ',', '.') }}</td>
+                                <td class="px-3 py-2.5 text-right text-xs font-black text-slate-950">Rp {{ number_format($total, 0, ',', '.') }}</td>
                                 @php
                                     $statusSelectClass = [
                                         'VALID' => 'border-orange-200 bg-orange-50 text-orange-600 focus:border-orange-400 focus:ring-orange-500/10',
@@ -161,7 +161,7 @@
                                         'CANCELLED' => 'border-slate-200 bg-slate-50 text-slate-400 focus:border-slate-400 focus:ring-slate-500/10',
                                     ][$order['status']] ?? 'border-slate-200 bg-slate-50 text-slate-600 focus:border-blue-500 focus:ring-blue-500/10';
                                 @endphp
-                                <td class="px-5 py-5">
+                                <td class="px-3 py-2.5">
                                     @if ($currentUser['role'] === 'ADMIN')
                                         <form method="POST" action="{{ route('purchase-orders.status.update', $order['id']) }}">
                                             @csrf
@@ -176,7 +176,7 @@
                                         @include('partials.status-badge', ['status' => $order['status']])
                                     @endif
                                 </td>
-                                <td class="px-5 py-5">
+                                <td class="px-3 py-2.5">
                                     <div class="flex justify-end gap-1.5">
                                         @if ($currentUser['role'] === 'ADMIN')
                                             @if (! $isLocked)

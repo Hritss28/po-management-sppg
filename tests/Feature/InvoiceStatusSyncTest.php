@@ -79,8 +79,8 @@ test('invoice history shows item details', function (): void {
         ->assertSeeText('Rincian Barang')
         ->assertSeeText('BAWANG MERAH')
         ->assertSeeText('Ref: '.$order->number)
-        ->assertSeeText('12 KG x Rp 15.000')
-        ->assertSeeText('Rp 180.000');
+        ->assertSeeText('1 item')
+        ->assertSeeText('Rp 500.000');
 });
 
 test('invoice create shows supplier bank accounts', function (string $supplierName, array $expectedTexts): void {

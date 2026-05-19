@@ -297,6 +297,7 @@ trait ProcurementHelpers
         return [
             'number' => $delivery->number,
             'date' => $delivery->date->format('Y-m-d'),
+            'time' => $delivery->time ? substr((string) $delivery->time, 0, 5) : null,
             'driver' => $delivery->driver,
             'notes' => $delivery->notes,
             'kepada' => $delivery->kepada,
