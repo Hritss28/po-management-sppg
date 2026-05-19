@@ -8,30 +8,30 @@
             : 0;
     @endphp
 
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-4 backdrop-blur-sm">
-        <form method="POST" action="{{ route('invoices.store', $order['id']) }}" class="mx-auto max-h-[calc(100vh-2rem)] max-w-[1280px] overflow-y-auto rounded-3xl bg-slate-50 shadow-2xl" data-invoice-form>
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-2 backdrop-blur-sm sm:p-4">
+        <form method="POST" action="{{ route('invoices.store', $order['id']) }}" class="mx-auto max-h-[calc(100vh-1rem)] max-w-[1280px] overflow-y-auto rounded-2xl bg-slate-50 shadow-2xl sm:max-h-[calc(100vh-2rem)] sm:rounded-3xl" data-invoice-form>
             @csrf
             <input type="hidden" name="supplier" value="{{ $supplier['name'] }}">
             <input type="hidden" name="invoice_no" value="{{ $invoiceNumber }}">
             <input type="hidden" name="invoice_date" value="{{ now()->format('Y-m-d') }}">
 
-            <header class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-8 py-6">
-                <div class="flex items-center gap-4">
+            <header class="sticky top-0 z-10 flex items-center justify-between gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-8 sm:py-6">
+                <div class="flex min-w-0 items-center gap-3 sm:gap-4">
                     <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 7h6M9 11h6M9 15h3M5 3h14v18H5z" />
                         </svg>
                     </span>
-                    <div>
-                        <h1 class="text-2xl font-black tracking-tight text-slate-950">Rekap Tagihan (Invoice)</h1>
+                    <div class="min-w-0">
+                        <h1 class="truncate text-lg font-black tracking-tight text-slate-950 sm:text-2xl">Rekap Tagihan (Invoice)</h1>
                         <p class="mt-1 text-xs font-black uppercase tracking-[0.22em] text-slate-400">{{ $supplier['name'] }}</p>
                     </div>
                 </div>
                 <a href="{{ route('invoices.index') }}" class="text-3xl leading-none text-slate-400 hover:text-slate-700">&times;</a>
             </header>
 
-            <div class="grid grid-cols-1 gap-10 px-8 py-10 lg:grid-cols-[1fr_365px]">
-                <section class="rounded-2xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+            <div class="grid grid-cols-1 gap-6 px-4 py-6 sm:px-8 sm:py-10 lg:grid-cols-[1fr_340px] xl:grid-cols-[1fr_365px]">
+                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                     <h2 class="mb-4 flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-slate-400">
                         <span class="text-slate-300">▣</span>
                         Input Harga Per Barang
@@ -85,7 +85,7 @@
                     </div>
                 </section>
 
-                <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+                <aside class="h-fit rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                     <h2 class="mb-8 flex items-center gap-3 text-sm font-black uppercase tracking-[0.2em] text-slate-400">
                         <span class="text-slate-300">▭</span>
                         Ringkasan Pembayaran

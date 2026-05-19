@@ -25,30 +25,30 @@
     @endphp
 
 
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-4 backdrop-blur-sm">
-        <form method="POST" action="{{ route('surat-jalan.update', $order['id']) }}" enctype="multipart/form-data" class="mx-auto max-h-[calc(100vh-2rem)] max-w-[1020px] overflow-y-auto rounded-2xl bg-slate-100 shadow-2xl">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-2 backdrop-blur-sm sm:p-4">
+        <form method="POST" action="{{ route('surat-jalan.update', $order['id']) }}" enctype="multipart/form-data" class="mx-auto max-h-[calc(100vh-1rem)] max-w-[1020px] overflow-y-auto rounded-2xl bg-slate-100 shadow-2xl sm:max-h-[calc(100vh-2rem)]">
             @csrf
             @method('PATCH')
 
-            <header class="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-8 py-4">
-                <div class="flex items-center gap-4">
+            <header class="sticky top-0 z-10 flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-8 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex min-w-0 items-center gap-3 sm:gap-4">
                     <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M3 6h11v9H3zM14 10h3l3 3v2h-6zM6 18a2 2 0 104 0M16 18a2 2 0 104 0" />
                         </svg>
                     </span>
-                    <h1 class="text-2xl font-black tracking-tight text-slate-950">{{ $title }}</h1>
+                    <h1 class="min-w-0 text-lg font-black tracking-tight text-slate-950 sm:text-2xl">{{ $title }}</h1>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex items-center justify-end gap-3 sm:gap-4">
                     @if ($isAdmin)
-                        <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</button>
+                        <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-black text-slate-600 sm:px-5 sm:py-3">Cetak PDF</button>
                     @endif
                     <a href="{{ route('surat-jalan.index') }}" class="text-3xl leading-none text-slate-400 hover:text-slate-700">×</a>
                 </div>
             </header>
 
-            <div class="grid grid-cols-1 gap-8 px-8 py-8 lg:grid-cols-2">
-                <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+            <div class="grid grid-cols-1 gap-5 px-4 py-5 sm:gap-8 sm:px-8 sm:py-8 lg:grid-cols-2">
+                <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
                     <div class="mb-7 flex flex-wrap gap-2">
                         <p class="w-full text-xs font-black uppercase tracking-[0.16em] text-slate-400">Detail Pengiriman & Rekap Supplier</p>
                         @foreach (collect($order['items'])->pluck('supplier')->unique() as $supplier)
@@ -61,7 +61,7 @@
                             <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Kepada</span>
                             <input name="kepada" value="{{ $kepada }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                         </label>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">KD SPPG</span>
                                 <input name="kd_sppg" value="{{ $kdSppg }}" @readonly(! $isAdmin) placeholder="Kode SPPG" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
@@ -83,7 +83,7 @@
                             <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">No Surat Jalan</span>
                             <input name="surat_jalan_no" value="{{ $sjNumber }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-black text-slate-800 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
                         </label>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                             <label class="block">
                                 <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Tanggal Kirim</span>
                                 <input name="delivery_date" type="date" value="{{ $deliveryDate }}" @readonly(! $isAdmin) class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
@@ -101,7 +101,7 @@
                 </section>
 
                 <section class="space-y-7">
-                    <div class="rounded-2xl border border-slate-200 bg-white p-6 text-center shadow-md shadow-slate-200/70">
+                    <div class="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-md shadow-slate-200/70 sm:p-6">
                         <p class="mb-4 text-xs font-black uppercase tracking-[0.16em] text-slate-400">Upload Foto Bukti/Drop Barang</p>
                         @php
                             $proofPhoto = $order['delivery']['proof_photo'] ?? null;
@@ -138,7 +138,7 @@
                     </div>
 
                     @if ($isAdmin)
-                    <div class="rounded-2xl bg-emerald-600 p-7 text-white shadow-2xl shadow-emerald-500/20">
+                    <div class="rounded-2xl bg-emerald-600 p-5 text-white shadow-2xl shadow-emerald-500/20 sm:p-7">
                         <div class="flex items-center gap-4">
                             <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20">
                                 @include('partials.icon', ['name' => 'check-circle', 'class' => 'h-6 w-6'])
@@ -153,8 +153,8 @@
                 </section>
             </div>
 
-            <section class="mx-8 mb-8 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
-                <div class="border-b border-slate-100 px-7 py-5">
+            <section class="mx-4 mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70 sm:mx-8 sm:mb-8">
+                <div class="border-b border-slate-100 px-5 py-4 sm:px-7 sm:py-5">
                     <h2 class="text-sm font-black uppercase tracking-[0.18em] text-slate-900">Daftar Barang Dalam Surat Jalan</h2>
                 </div>
                 <div class="overflow-x-auto">
@@ -224,12 +224,12 @@
                 </div>
             </section>
 
-            <footer class="sticky bottom-0 flex items-center justify-between border-t border-slate-200 bg-white px-8 py-5">
-                <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Pastikan data barang sudah benar sebelum disimpan.</p>
-                <div class="flex items-center gap-6">
+            <footer class="sticky bottom-0 flex flex-col gap-4 border-t border-slate-200 bg-white px-4 py-4 sm:px-8 sm:py-5 md:flex-row md:items-center md:justify-between">
+                <p class="text-[10px] font-black uppercase tracking-[0.16em] text-slate-400 sm:tracking-[0.2em]">Pastikan data barang sudah benar sebelum disimpan.</p>
+                <div class="flex items-center justify-end gap-4 sm:gap-6">
                     <a href="{{ route('surat-jalan.index') }}" class="text-sm font-black text-slate-700">Batal</a>
                     @if ($isAdmin)
-                        <button type="submit" class="rounded-lg bg-blue-600 px-9 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20">Simpan & Terbitkan Surat Jalan</button>
+                        <button type="submit" class="rounded-lg bg-blue-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-600/20 sm:px-9">Simpan & Terbitkan Surat Jalan</button>
                     @endif
                 </div>
             </footer>

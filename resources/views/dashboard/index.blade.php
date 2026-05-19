@@ -72,9 +72,9 @@
                 <p class="mt-2 text-sm font-medium text-slate-500">Pantau status pengadaan dan finansial secara real-time.</p>
             </div>
 
-            <div class="flex w-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70 xl:w-auto">
+            <div class="flex w-full overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70 xl:w-auto">
                 @foreach ($summary as $item)
-                    <div class="min-w-0 flex-1 border-r border-slate-100 px-5 py-3 last:border-r-0 xl:min-w-36">
+                    <div class="min-w-36 flex-1 border-r border-slate-100 px-4 py-3 last:border-r-0 xl:min-w-36">
                         <p class="text-[9px] font-black uppercase tracking-[0.22em] text-slate-400">{{ $item['label'] }}</p>
                         <p class="mt-1 whitespace-nowrap text-sm font-black {{ $item['class'] }}">{{ $item['value'] }}</p>
                     </div>
@@ -84,12 +84,12 @@
 
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
             @foreach ($financeCards as $card)
-                <article class="{{ $card['box'] }} min-h-40 rounded-3xl border p-6 shadow-md shadow-slate-200/70">
+                <article class="{{ $card['box'] }} min-h-36 rounded-2xl border p-5 shadow-md shadow-slate-200/70 sm:min-h-40 sm:rounded-3xl sm:p-6">
                     <div class="{{ $card['iconBox'] }} mb-5 flex h-10 w-10 items-center justify-center rounded-xl">
                         @include('partials.icon', ['name' => $card['icon'], 'class' => 'h-5 w-5'])
                     </div>
                     <p class="{{ $card['labelClass'] ?? 'text-slate-400' }} text-[10px] font-black uppercase tracking-[0.2em]">{{ $card['label'] }}</p>
-                    <p class="mt-6 text-2xl font-black tracking-tight">{{ $card['value'] }}</p>
+                    <p class="mt-5 break-words text-xl font-black tracking-tight sm:mt-6 sm:text-2xl">{{ $card['value'] }}</p>
                     @if ($card['caption'])
                         <p class="mt-4 text-[9px] font-black uppercase tracking-[0.18em] opacity-80">{{ $card['caption'] }}</p>
                     @endif
@@ -98,7 +98,7 @@
         </div>
 
         <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-            <section class="rounded-3xl border border-slate-200 bg-white p-8 shadow-md shadow-slate-200/70 xl:col-span-8">
+            <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:rounded-3xl sm:p-8 xl:col-span-8">
                 <div class="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <h3 class="text-sm font-black uppercase tracking-[0.18em] text-slate-950">Status Dokumen PO</h3>
                     <div class="flex flex-wrap gap-4">
@@ -123,7 +123,7 @@
                                 <span class="border-t border-dashed border-slate-100"></span>
                             @endfor
                         </div>
-                        <div class="relative z-10 grid h-full grid-cols-4 items-end gap-8 pb-8">
+                        <div class="relative z-10 grid h-full grid-cols-4 items-end gap-3 pb-8 sm:gap-8">
                             @foreach ($chartData as $item)
                                 <div class="flex h-full flex-col items-center justify-end gap-3">
                                     <div class="{{ $item['color'] }} w-10 rounded-t-lg shadow-sm" style="height: {{ $item['value'] === 0 ? 2 : max(22, ($item['value'] / $maxChart) * 250) }}px"></div>
@@ -135,7 +135,7 @@
                 </div>
             </section>
 
-            <aside class="rounded-3xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70 xl:col-span-4">
+            <aside class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:rounded-3xl sm:p-6 xl:col-span-4">
                 <h3 class="mb-6 text-sm font-black uppercase tracking-[0.18em] text-slate-950">Aktivitas Terakhir</h3>
                 <div class="space-y-5">
                     @foreach ($orders->take(6) as $order)

@@ -2,11 +2,11 @@
 
 @section('content')
     <section class="mx-auto max-w-[1440px] space-y-7">
-        <nav class="flex gap-4">
-            <a href="{{ route('invoices.index') }}" class="{{ $activeTab === 'pending' ? 'bg-white text-blue-600 shadow-md shadow-slate-200/70' : 'text-slate-500' }} rounded-xl px-8 py-3 text-sm font-black uppercase tracking-[0.18em]">
+        <nav class="flex gap-3 overflow-x-auto pb-1 sm:gap-4">
+            <a href="{{ route('invoices.index') }}" class="{{ $activeTab === 'pending' ? 'bg-white text-blue-600 shadow-md shadow-slate-200/70' : 'text-slate-500' }} shrink-0 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-[0.14em] sm:px-8 sm:text-sm sm:tracking-[0.18em]">
                 Siap Rekap Tagihan
             </a>
-            <a href="{{ route('invoices.index', ['tab' => 'history']) }}" class="{{ $activeTab === 'history' ? 'bg-white text-emerald-600 shadow-md shadow-slate-200/70' : 'text-slate-500' }} rounded-xl px-8 py-3 text-sm font-black uppercase tracking-[0.18em]">
+            <a href="{{ route('invoices.index', ['tab' => 'history']) }}" class="{{ $activeTab === 'history' ? 'bg-white text-emerald-600 shadow-md shadow-slate-200/70' : 'text-slate-500' }} shrink-0 rounded-xl px-5 py-3 text-xs font-black uppercase tracking-[0.14em] sm:px-8 sm:text-sm sm:tracking-[0.18em]">
                 Riwayat Invoice
             </a>
         </nav>
@@ -77,19 +77,19 @@
             </section>
         @else
             <section class="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-4">
-                <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Tagihan Beredar</p>
                     <p class="mt-3 text-2xl font-black text-slate-950">Rp {{ number_format($stats['total'], 0, ',', '.') }}</p>
                 </article>
-                <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Lunas</p>
                     <p class="mt-3 text-2xl font-black text-emerald-600">Rp {{ number_format($stats['paid'], 0, ',', '.') }}</p>
                 </article>
-                <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Belum Dibayar</p>
                     <p class="mt-3 text-2xl font-black text-rose-600">Rp {{ number_format($stats['unpaid'], 0, ',', '.') }}</p>
                 </article>
-                <article class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+                <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
                     <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Total Dokumen</p>
                     <p class="mt-3 text-2xl font-black text-slate-950">{{ $stats['count'] }} Invoice</p>
                 </article>

@@ -14,13 +14,13 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-slate-100 font-sans text-slate-800 antialiased">
-        <div class="flex h-screen overflow-hidden">
+        <div class="flex h-dvh overflow-hidden">
             @include('partials.sidebar', ['currentUser' => $currentUser])
 
             <div class="flex min-w-0 flex-1 flex-col">
                 @include('partials.navbar', ['title' => $title ?? 'Dashboard', 'currentUser' => $currentUser])
 
-                <main class="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
+                <main class="flex-1 overflow-y-auto px-3 py-4 sm:px-6 lg:px-8 lg:py-6">
                     <div class="mx-auto max-w-7xl space-y-6">
                         @yield('content')
                     </div>

@@ -1,8 +1,8 @@
 @extends('layouts.app', ['title' => 'Master Stok'])
 
 @section('content')
-    <section class="mx-auto max-w-[1500px] bg-slate-50 p-8">
-        <div class="mb-8 rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70">
+    <section class="mx-auto max-w-[1500px] bg-slate-50 p-2 sm:p-8">
+        <div class="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 sm:mb-8 sm:p-5">
             <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <form method="GET" action="{{ route('master-stok.index') }}" class="relative w-full lg:max-w-xl">
                     <svg xmlns="http://www.w3.org/2000/svg" class="pointer-events-none absolute left-5 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -12,7 +12,7 @@
                 </form>
 
                 @if ($currentUser['role'] === 'ADMIN')
-                    <a href="{{ route('master-stok.index', ['mode' => 'create']) }}" class="inline-flex h-12 items-center justify-center gap-3 rounded-lg bg-blue-600 px-8 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700">
+                    <a href="{{ route('master-stok.index', ['mode' => 'create']) }}" class="inline-flex h-11 w-full items-center justify-center gap-3 rounded-lg bg-blue-600 px-5 text-sm font-black uppercase tracking-wide text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 sm:h-12 sm:w-auto sm:px-8">
                         <span class="text-2xl font-light leading-none">+</span>
                         Tambah Barang
                     </a>
@@ -129,7 +129,7 @@
                 </table>
             </div>
             @if ($items->hasPages())
-                <div class="border-t border-slate-100 px-8 py-4">
+                <div class="border-t border-slate-100 px-4 py-4 sm:px-8">
                     {{ $items->links() }}
                 </div>
             @endif

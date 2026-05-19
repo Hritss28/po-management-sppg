@@ -111,6 +111,33 @@ document.addEventListener('submit', (event) => {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
+    const mobileSidebar = document.getElementById('mobile-sidebar');
+    const mobileSidebarBackdrop = document.getElementById('mobile-sidebar-backdrop');
+    const openMobileSidebar = document.querySelector('[data-mobile-sidebar-open]');
+    const closeMobileSidebar = document.querySelectorAll('[data-mobile-sidebar-close]');
+
+    const setMobileSidebar = (isOpen) => {
+        if (!mobileSidebar || !mobileSidebarBackdrop) {
+            return;
+        }
+
+        mobileSidebar.classList.toggle('-translate-x-full', !isOpen);
+        mobileSidebarBackdrop.classList.toggle('hidden', !isOpen);
+        document.body.classList.toggle('overflow-hidden', isOpen);
+    };
+
+    openMobileSidebar?.addEventListener('click', () => setMobileSidebar(true));
+    closeMobileSidebar.forEach((element) => element.addEventListener('click', () => setMobileSidebar(false)));
+    mobileSidebar?.querySelectorAll('a').forEach((link) => {
+        link.addEventListener('click', () => setMobileSidebar(false));
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            setMobileSidebar(false);
+        }
+    });
+
     document.querySelectorAll('[data-currency-input]').forEach((input) => {
         input.value = formatRupiah(input.value);
     });

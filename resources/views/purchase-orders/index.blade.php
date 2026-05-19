@@ -2,8 +2,8 @@
 
 @section('content')
     <section class="mx-auto max-w-[1440px] space-y-7">
-        <div class="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
-            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                 <div class="absolute right-0 top-0 h-full w-2 bg-emerald-400/10"></div>
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -16,7 +16,7 @@
                 </div>
             </article>
 
-            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                 <div class="absolute right-0 top-0 h-full w-2 bg-blue-400/10"></div>
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -29,7 +29,7 @@
                 </div>
             </article>
 
-            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                 <div class="absolute right-0 top-0 h-full w-2 bg-orange-400/10"></div>
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -42,7 +42,7 @@
                 </div>
             </article>
 
-            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+            <article class="relative overflow-hidden rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                 <div class="absolute right-0 top-0 h-full w-2 bg-indigo-400/10"></div>
                 <div class="flex items-start justify-between gap-4">
                     <div>
@@ -56,7 +56,7 @@
             </article>
         </div>
 
-        <form method="GET" class="flex flex-col gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 lg:flex-row">
+        <form method="GET" class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 sm:p-5 lg:flex-row">
             <div class="relative min-w-0 flex-1">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">⌕</span>
                 <input name="search" value="{{ $filters['search'] ?? '' }}" type="search" placeholder="Cari berdasarkan No PO, barang, atau nama pembuat..." class="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-semibold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10">

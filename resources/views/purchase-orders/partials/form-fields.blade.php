@@ -7,9 +7,9 @@
     $total = collect($items)->sum(fn ($item) => ($item['qty'] ?? 0) * ($item['price'] ?? 0));
 @endphp
 
-<div class="grid grid-cols-1 gap-10 px-8 py-10 lg:grid-cols-[400px_1fr] xl:px-20">
-    <aside class="space-y-8">
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+<div class="grid grid-cols-1 gap-6 px-4 py-6 sm:px-8 sm:py-10 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr] xl:px-20">
+    <aside class="space-y-6 sm:space-y-8">
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
             <div class="mb-8 flex items-center gap-3 border-b border-slate-100 pb-6">
                 <span class="h-4 w-1 rounded-full bg-blue-600"></span>
                 <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-xs font-black text-slate-400">i</span>
@@ -31,7 +31,7 @@
             </div>
         </section>
 
-        <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/70">
+        <section class="rounded-2xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-6">
             <div class="mb-8 flex items-center gap-3 border-b border-slate-100 pb-6">
                 <span class="h-4 w-1 rounded-full bg-orange-500"></span>
                 <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-slate-50 text-xs font-black text-slate-400">⛟</span>
@@ -51,7 +51,7 @@
                         </select>
                     @endif
                 </label>
-                <div class="grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <label class="block">
                         <span class="mb-2 block text-[10px] font-black uppercase tracking-widest text-slate-500">Tgl Drop</span>
                         <input name="droping_date" type="date" value="{{ old('droping_date', $order['droping_date'] ?? '') }}" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10">
@@ -64,19 +64,19 @@
             </div>
         </section>
 
-        <section class="rounded-2xl bg-slate-950 p-6 text-white shadow-2xl shadow-slate-400/40">
+        <section class="rounded-2xl bg-slate-950 p-5 text-white shadow-2xl shadow-slate-400/40 sm:p-6">
             <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">Estimasi Total</p>
-            <p class="mt-4 text-3xl font-black tracking-tight">Rp {{ number_format($total, 0, ',', '.') }}</p>
+            <p class="mt-4 break-words text-2xl font-black tracking-tight sm:text-3xl">Rp {{ number_format($total, 0, ',', '.') }}</p>
         </section>
     </aside>
 
     <section class="min-w-0">
-        <div class="mb-8 flex items-center justify-between gap-4">
+        <div class="mb-6 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
             <h2 class="flex items-center gap-3 text-lg font-black uppercase tracking-tight text-slate-800">
                 <span class="text-2xl text-slate-400">◇</span>
                 Daftar Barang (<span id="items-count">{{ count($items) }}</span>)
             </h2>
-            <button type="button" id="add-item-btn" class="rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-600 shadow-md shadow-slate-200/70 hover:bg-blue-50 transition-colors">＋ Tambah Barang</button>
+            <button type="button" id="add-item-btn" class="w-full rounded-lg border border-slate-200 bg-white px-5 py-3 text-sm font-black text-blue-600 shadow-md shadow-slate-200/70 transition-colors hover:bg-blue-50 sm:w-auto">＋ Tambah Barang</button>
         </div>
 
         <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
@@ -286,4 +286,3 @@
         });
     });
 </script>
-

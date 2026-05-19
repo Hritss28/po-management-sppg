@@ -8,47 +8,47 @@
         $isLocked = in_array($order['status'], ['COMPLETED', 'INVOICED'], true);
     @endphp
 
-    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-5 backdrop-blur-sm">
-        <section class="mx-auto max-w-[1150px] overflow-hidden rounded-3xl bg-slate-100 shadow-2xl">
-            <header class="flex items-center justify-between border-b border-slate-200 bg-white px-9 py-4">
-                <div class="flex items-start gap-4">
+    <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-2 backdrop-blur-sm sm:p-5">
+        <section class="mx-auto max-w-[1150px] overflow-hidden rounded-2xl bg-slate-100 shadow-2xl sm:rounded-3xl">
+            <header class="flex flex-col gap-4 border-b border-slate-200 bg-white px-4 py-4 sm:px-9 lg:flex-row lg:items-center lg:justify-between">
+                <div class="flex min-w-0 items-start gap-3 sm:gap-4">
                     <span class="mt-1 flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-lg font-black text-white">P</span>
-                    <div>
-                        <h1 class="text-2xl font-black tracking-tight text-slate-950">Detail Pesanan: {{ $order['number'] ?? 'Belum Diterbitkan' }}</h1>
+                    <div class="min-w-0">
+                        <h1 class="break-words text-lg font-black tracking-tight text-slate-950 sm:text-2xl">Detail Pesanan: {{ $order['number'] ?? 'Belum Diterbitkan' }}</h1>
                         <div class="mt-2">@include('partials.status-badge', ['status' => $order['status']])</div>
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
+                <div class="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
                     @if ($currentUser['role'] === 'ADMIN' && ! $isLocked && ! $order['number'])
-                        <button type="submit" form="supplier-assignment-form" class="rounded-lg bg-emerald-600 px-5 py-3 text-sm font-black text-white shadow-lg shadow-emerald-600/20">
+                        <button type="submit" form="supplier-assignment-form" class="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-emerald-600/20 sm:px-5 sm:py-3">
                             Simpan Penugasan &amp; Terbitkan No. PO
                         </button>
                     @endif
                     @if ($order['number'])
-                        <a href="{{ route('purchase-orders.preview', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</a>
+                        <a href="{{ route('purchase-orders.preview', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm font-black text-slate-600 sm:px-5 sm:py-3">Cetak PDF</a>
                     @endif
                     <a href="{{ route('purchase-orders.index') }}" class="text-3xl leading-none text-slate-400 hover:text-slate-700">&times;</a>
                 </div>
             </header>
 
-            <form id="supplier-assignment-form" method="POST" action="{{ route('purchase-orders.suppliers.update', $order['id']) }}" class="space-y-8 px-9 py-6">
+            <form id="supplier-assignment-form" method="POST" action="{{ route('purchase-orders.suppliers.update', $order['id']) }}" class="space-y-5 px-4 py-5 sm:space-y-8 sm:px-9 sm:py-6">
                 @csrf
                 @method('PATCH')
 
                 <div class="grid grid-cols-1 gap-9 lg:grid-cols-2">
                     <div class="space-y-7">
-                        <section class="rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+                        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                             <h2 class="mb-6 text-sm font-black uppercase tracking-[0.18em] text-slate-400">ⓘ Informasi PO</h2>
                             <dl class="space-y-5">
-                                <div class="flex items-center justify-between gap-6">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                                     <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Dibuat Oleh</dt>
                                     <dd class="text-base font-black text-slate-700">{{ $order['created_by'] }}</dd>
                                 </div>
-                                <div class="flex items-center justify-between gap-6">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                                     <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Tanggal PO</dt>
                                     <dd class="text-base font-black text-slate-700">{{ date('d F Y', strtotime($order['date'])) }}</dd>
                                 </div>
-                                <div class="flex items-center justify-between gap-6">
+                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                                     <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. PO</dt>
                                     <dd>
                                         @if ($order['number'])
@@ -63,14 +63,14 @@
                             </dl>
                         </section>
 
-                        <section class="rounded-xl border border-slate-200 bg-white p-7 shadow-md shadow-slate-200/70">
+                        <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-md shadow-slate-200/70 sm:p-7">
                             <h2 class="mb-6 text-sm font-black uppercase tracking-[0.18em] text-slate-400">⛟ Informasi Logistik</h2>
                             <dl class="space-y-5">
-                                <div class="flex items-center justify-between gap-6">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                                     <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. SPPG</dt>
                                     <dd class="text-base font-black text-slate-700">{{ $order['sppg_code'] }} ({{ $order['sppg'] }})</dd>
                                 </div>
-                                <div class="flex items-center justify-between gap-6">
+                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
                                     <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Jadwal Drop</dt>
                                     <dd class="text-base font-black text-slate-700">{{ $dropSchedule }}</dd>
                                 </div>
@@ -78,9 +78,9 @@
                         </section>
                     </div>
 
-                    <section class="h-fit rounded-xl bg-slate-950 p-9 text-white shadow-2xl shadow-slate-400/40">
+                    <section class="h-fit rounded-xl bg-slate-950 p-5 text-white shadow-2xl shadow-slate-400/40 sm:p-9">
                         <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">$ &nbsp; Total Invoice Keseluruhan</p>
-                        <p class="mt-5 text-4xl font-black tracking-tight">Rp {{ number_format($invoiceTotal, 0, ',', '.') }}</p>
+                        <p class="mt-5 break-words text-2xl font-black tracking-tight sm:text-4xl">Rp {{ number_format($invoiceTotal, 0, ',', '.') }}</p>
                         <div class="mt-8 flex items-center justify-between border-t border-white/10 pt-7">
                             <span class="text-sm font-black uppercase text-slate-400">Jumlah Barang</span>
                             <span class="text-base font-black">{{ count($order['items']) }} Jenis</span>
@@ -134,12 +134,12 @@
                     </div>
                 </section>
                 @if ($currentUser['role'] === 'ADMIN' && ! $isLocked && ! $order['number'])
-                    <div class="sticky bottom-0 -mx-9 -mb-6 flex items-center justify-between border-t border-amber-200 bg-amber-50 px-9 py-4 text-xs font-black uppercase tracking-[0.18em] text-amber-700">
+                    <div class="sticky bottom-0 -mx-4 -mb-5 flex flex-col gap-2 border-t border-amber-200 bg-amber-50 px-4 py-4 text-xs font-black uppercase tracking-[0.14em] text-amber-700 sm:-mx-9 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-9 sm:tracking-[0.18em]">
                         <span>⚠ Tentukan supplier untuk semua item agar nomor PO diterbitkan dan status berubah ke PROCESSING.</span>
                         <button type="submit" class="underline underline-offset-4">Simpan & Terbitkan</button>
                     </div>
                 @elseif ($currentUser['role'] === 'ADMIN' && ! $isLocked)
-                    <div class="sticky bottom-0 -mx-9 -mb-6 flex items-center justify-between border-t border-emerald-100 bg-emerald-50 px-9 py-4 text-xs font-black uppercase tracking-[0.18em] text-emerald-700">
+                    <div class="sticky bottom-0 -mx-4 -mb-5 flex flex-col gap-2 border-t border-emerald-100 bg-emerald-50 px-4 py-4 text-xs font-black uppercase tracking-[0.14em] text-emerald-700 sm:-mx-9 sm:-mb-6 sm:flex-row sm:items-center sm:justify-between sm:px-9 sm:tracking-[0.18em]">
                         <span>Terdapat perubahan penugasan supplier yang bisa disimpan.</span>
                         <button type="submit" class="underline underline-offset-4">Simpan Sekarang</button>
                     </div>
