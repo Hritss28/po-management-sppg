@@ -25,7 +25,8 @@ test('surat jalan number is suggested from purchase order number', function (): 
 
     $this->get(route('surat-jalan.show', $order->id))
         ->assertOk()
-        ->assertSee('value="2/SJ/18052026/VP/2026"', false);
+        ->assertSee('value="2/SJ/18052026/VP/2026"', false)
+        ->assertDontSee('formtarget="_blank"', false);
 });
 
 test('surat jalan preview fallback uses purchase order number format', function (): void {

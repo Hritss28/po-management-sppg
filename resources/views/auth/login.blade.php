@@ -65,7 +65,7 @@
                             </div>
                         </div> --}}
                         <div class="space-y-4">
-                            <input name="username" value="{{ old('username') }}" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5" placeholder="Username Admin">
+                            <input name="username" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5" placeholder="Username">
                             <input name="password" type="password" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5" placeholder="Password">
                         </div>
                         <button type="submit" class="w-full rounded-2xl bg-slate-900 py-5 text-sm font-black text-white shadow-xl shadow-slate-900/20 transition hover:bg-slate-800">

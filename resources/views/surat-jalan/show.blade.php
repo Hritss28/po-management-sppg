@@ -39,7 +39,7 @@
                     <h1 class="text-2xl font-black tracking-tight text-slate-950">{{ $title }}</h1>
                 </div>
                 <div class="flex items-center gap-4">
-                    <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" formtarget="_blank" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</button>
+                    <button type="submit" formaction="{{ route('surat-jalan.preview.form', $order['id']) }}" class="rounded-lg border border-slate-200 bg-slate-50 px-5 py-3 text-sm font-black text-slate-600">Cetak PDF</button>
                     <a href="{{ route('surat-jalan.index') }}" class="text-3xl leading-none text-slate-400 hover:text-slate-700">×</a>
                 </div>
             </header>
