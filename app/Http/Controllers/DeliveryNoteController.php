@@ -84,6 +84,7 @@ class DeliveryNoteController extends Controller
             'whatsapp' => ['nullable', 'string', 'max:40'],
             'surat_jalan_no' => ['required', 'string', 'max:80'],
             'delivery_date' => ['required', 'date'],
+            'delivery_time' => ['nullable', 'date_format:H:i'],
             'driver' => ['required', 'string', 'max:120'],
             'notes' => ['required', 'string', 'max:500'],
             'qty_actual' => ['required', 'array'],
@@ -124,6 +125,7 @@ class DeliveryNoteController extends Controller
                 [
                     'number' => $validated['surat_jalan_no'],
                     'date' => $validated['delivery_date'],
+                    'time' => $validated['delivery_time'] ?? null,
                     'driver' => $validated['driver'] ?: 'Nama Pengirim',
                     'notes' => $validated['notes'] ?: '-',
                     'kepada' => $validated['kepada'],
@@ -181,6 +183,7 @@ class DeliveryNoteController extends Controller
             'whatsapp' => ['nullable', 'string', 'max:40'],
             'surat_jalan_no' => ['required', 'string', 'max:80'],
             'delivery_date' => ['required', 'date'],
+            'delivery_time' => ['nullable', 'date_format:H:i'],
             'driver' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:500'],
             'qty_actual' => ['required', 'array'],
@@ -195,6 +198,7 @@ class DeliveryNoteController extends Controller
         $order['delivery'] = [
             'number' => $validated['surat_jalan_no'],
             'date' => $validated['delivery_date'],
+            'time' => $validated['delivery_time'] ?? null,
             'driver' => $validated['driver'] ?: 'Nama Pengirim',
             'notes' => $validated['notes'] ?: '-',
             'kepada' => $validated['kepada'],

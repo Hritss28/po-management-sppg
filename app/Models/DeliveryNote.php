@@ -11,6 +11,7 @@ class DeliveryNote extends Model
         'purchase_order_id',
         'number',
         'date',
+        'time',
         'driver',
         'kepada',
         'kd_sppg',
