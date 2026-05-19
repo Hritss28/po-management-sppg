@@ -81,7 +81,7 @@
                                                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L8.582 18.07 4.5 19.5l1.43-4.082z" />
                                                 </svg>
                                             </a>
-                                            <form method="POST" action="{{ route('master-sppg.destroy', $sppg['id']) }}" onsubmit="return confirm('Hapus SPPG ini?')">
+                                            <form method="POST" action="{{ route('master-sppg.destroy', $sppg['id']) }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="text-slate-400 transition hover:text-rose-600" title="Hapus">

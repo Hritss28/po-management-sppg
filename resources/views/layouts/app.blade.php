@@ -4,6 +4,13 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>{{ $title ?? 'PO Management SPPG' }}</title>
+        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        <script>
+            window.AppAlerts = {
+                success: @json(session('success')),
+                error: @json($errors->any() ? $errors->first() : null),
+            };
+        </script>
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="bg-slate-100 font-sans text-slate-800 antialiased">

@@ -57,7 +57,7 @@ class AuthController extends Controller
 
         if ($unit === null) {
             return back()
-                ->withErrors(['sppg_code' => 'Kode SPPG belum terdaftar. Gunakan M1101 untuk SPPG-Balongsari.'])
+                ->withErrors(['sppg_code' => 'Kode SPPG belum terdaftar.'])
                 ->withInput(['mode' => 'sppg', 'sppg_code' => $code]);
         }
 

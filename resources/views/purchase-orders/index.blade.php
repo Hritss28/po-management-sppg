@@ -186,7 +186,7 @@
                                                     </svg>
                                                 </a>
                                             @endif
-                                            <form method="POST" action="{{ route('purchase-orders.destroy', $order['id']) }}" onsubmit="return confirm('Hapus PO ini dari tampilan sementara?')">
+                                            <form method="POST" action="{{ route('purchase-orders.destroy', $order['id']) }}">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" title="Hapus PO" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 shadow-sm transition hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600">
