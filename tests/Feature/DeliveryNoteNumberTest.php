@@ -100,7 +100,19 @@ test('saved surat jalan detail shows driver notes and proof photo', function ():
         ->assertSee('Foto Bukti');
 });
 
-function deliveryNoteNumberPurchaseOrder(): PurchaseOrder
+test('surat jalan preview prepared by uses supplier account holder name', function (): void {
+    $order = deliveryNoteNumberPurchaseOrder(
+        supplierName: 'NUTRIVA FOODS',
+        poNumber: '5/PO/19052026/NF/2026',
+    );
+
+    $this->get(route('surat-jalan.preview', $order->id))
+        ->assertOk()
+        ->assertSeeText('Dessy Istuning Tiyas')
+        ->assertDontSeeText('Supplier (Admin)');
+});
+
+function deliveryNoteNumberPurchaseOrder(string $supplierName = 'VIALA PANGAN', string $poNumber = '2/PO/18052026/VP/2026'): PurchaseOrder
 {
     $sppg = Sppg::query()->create([
         'code' => 'M1101',
@@ -109,11 +121,11 @@ function deliveryNoteNumberPurchaseOrder(): PurchaseOrder
         'pic_name' => 'Datok SPPG',
     ]);
 
-    $supplier = Supplier::query()->create(['name' => 'VIALA PANGAN']);
+    $supplier = Supplier::query()->create(['name' => $supplierName]);
     $stock = StockItem::query()->create(['name' => 'AYAM FILET', 'unit' => 'KG']);
 
     $order = PurchaseOrder::query()->create([
-        'number' => '2/PO/18052026/VP/2026',
+        'number' => $poNumber,
         'date' => '2026-05-18',
         'created_by' => 'Admin Supplier',
         'sppg_id' => $sppg->id,

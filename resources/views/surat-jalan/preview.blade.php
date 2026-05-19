@@ -33,6 +33,7 @@
             $notes = $delivery['notes'] ?? '-';
             $supplierText = collect($order['items'])->pluck('supplier')->unique()->implode(', ');
             $receiverName = $order['sppg_pic_name'] ?: $pjSppg;
+            $preparedByName = $preparedBy ?? 'Supplier (Admin)';
             $formattedDeliveryDate = \Illuminate\Support\Carbon::parse($deliveryDate)->format('d/m/Y');
         @endphp
 
@@ -143,7 +144,7 @@
                 <section class="mt-20 grid grid-cols-3 gap-10 text-center">
                     <div>
                         <p class="mb-16 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Dibuat Oleh,</p>
-                        <div class="border-t border-slate-900 pt-3 text-sm font-black">Supplier (Admin)</div>
+                        <div class="border-t border-slate-900 pt-3 text-sm font-black">{{ $preparedByName }}</div>
                     </div>
                     <div>
                         <p class="mb-16 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Dikirim Oleh,</p>

@@ -158,9 +158,12 @@ class DeliveryNoteController extends Controller
             return $redirect;
         }
 
+        $order = $this->findOrderArray($id);
+
         return view('surat-jalan.preview', [
             'currentUser' => $this->currentUser(),
-            'order' => $this->findOrderArray($id),
+            'order' => $order,
+            'preparedBy' => $this->deliveryNotePreparedBy($order),
         ]);
     }
 
@@ -213,6 +216,20 @@ class DeliveryNoteController extends Controller
         return view('surat-jalan.preview', [
             'currentUser' => $this->currentUser(),
             'order' => $order,
+            'preparedBy' => $this->deliveryNotePreparedBy($order),
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $order
+     */
+    private function deliveryNotePreparedBy(array $order): string
+    {
+        $supplierName = collect($order['items'])
+            ->pluck('supplier')
+            ->filter(fn (?string $supplier): bool => filled($supplier) && $supplier !== '-')
+            ->first();
+
+        return $this->supplierDetails($supplierName)['bank_account_name'];
     }
 }
