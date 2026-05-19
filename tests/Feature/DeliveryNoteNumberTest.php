@@ -58,7 +58,8 @@ test('surat jalan preview from form uses unsaved driver and notes', function ():
         ->assertSee('Udin')
         ->assertSee('Aman')
         ->assertSee('Datok SPPG')
-        ->assertSee('7 KG');
+        ->assertSeeTextInOrder(['AYAM FILET', '7', 'KG', 'A'])
+        ->assertDontSee('&nbsp;', false);
 
     $this->assertDatabaseCount('delivery_notes', 0);
     expect($order->refresh()->status)->toBe('PROCESSING');

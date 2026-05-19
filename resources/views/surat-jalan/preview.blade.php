@@ -147,17 +147,6 @@
                                 <td class="border border-slate-400 px-2 py-1">{{ $item['request'] ?? '-' }}</td>
                             </tr>
                         @endforeach
-                        {{-- Baris kosong untuk mencapai minimum baris --}}
-                        @for ($i = count($order['items']); $i < max(3, count($order['items'])); $i++)
-                            <tr>
-                                <td class="border border-slate-400 px-2 py-1">&nbsp;</td>
-                                <td class="border border-slate-400 px-2 py-1"></td>
-                                <td class="border border-slate-400 px-2 py-1"></td>
-                                <td class="border border-slate-400 px-2 py-1"></td>
-                                <td class="border border-slate-400 px-2 py-1"></td>
-                                <td class="border border-slate-400 px-2 py-1"></td>
-                            </tr>
-                        @endfor
                     </tbody>
                 </table>
 

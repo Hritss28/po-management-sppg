@@ -35,50 +35,48 @@
                 @csrf
                 @method('PATCH')
 
-                <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-                    <div class="space-y-5">
-                        <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 sm:p-5">
-                            <h2 class="mb-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">ⓘ Informasi PO</h2>
-                            <dl class="space-y-3">
-                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                                    <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Dibuat Oleh</dt>
-                                    <dd class="text-base font-black text-slate-700">{{ $order['created_by'] }}</dd>
-                                </div>
-                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                                    <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Tanggal PO</dt>
-                                    <dd class="text-base font-black text-slate-700">{{ date('d F Y', strtotime($order['date'])) }}</dd>
-                                </div>
-                                <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                                    <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. PO</dt>
-                                    <dd>
-                                        @if ($order['number'])
-                                            <span class="text-base font-black text-slate-700">{{ $order['number'] }}</span>
-                                        @else
-                                            <span class="inline-flex items-center gap-1.5 rounded-lg bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-600 border border-amber-200">
-                                                ⚠ Belum Diterbitkan — Tentukan supplier terlebih dahulu
-                                            </span>
-                                        @endif
-                                    </dd>
-                                </div>
-                            </dl>
-                        </section>
+                <div class="grid grid-cols-1 gap-4 lg:grid-cols-3">
+                    <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 sm:p-5">
+                        <h2 class="mb-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">ⓘ Informasi PO</h2>
+                        <dl class="space-y-3">
+                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6 lg:flex-col lg:items-start lg:gap-1 xl:flex-row xl:items-center xl:gap-4">
+                                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Dibuat Oleh</dt>
+                                <dd class="break-words text-base font-black text-slate-700">{{ $order['created_by'] }}</dd>
+                            </div>
+                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6 lg:flex-col lg:items-start lg:gap-1 xl:flex-row xl:items-center xl:gap-4">
+                                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Tanggal PO</dt>
+                                <dd class="break-words text-base font-black text-slate-700">{{ date('d F Y', strtotime($order['date'])) }}</dd>
+                            </div>
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-6 lg:flex-col lg:items-start lg:gap-2 xl:flex-row xl:items-center xl:gap-4">
+                                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. PO</dt>
+                                <dd class="min-w-0">
+                                    @if ($order['number'])
+                                        <span class="break-all text-base font-black text-slate-700">{{ $order['number'] }}</span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-black text-amber-600">
+                                            ⚠ Belum Diterbitkan — Tentukan supplier terlebih dahulu
+                                        </span>
+                                    @endif
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
 
-                        <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 sm:p-5">
-                            <h2 class="mb-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">⛟ Informasi Logistik</h2>
-                            <dl class="space-y-3">
-                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                                    <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. SPPG</dt>
-                                    <dd class="text-base font-black text-slate-700">{{ $order['sppg_code'] }} ({{ $order['sppg'] }})</dd>
-                                </div>
-                                <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-                                    <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Jadwal Drop</dt>
-                                    <dd class="text-base font-black text-slate-700">{{ $dropSchedule }}</dd>
-                                </div>
-                            </dl>
-                        </section>
-                    </div>
+                    <section class="rounded-lg border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/70 sm:p-5">
+                        <h2 class="mb-4 text-xs font-black uppercase tracking-[0.18em] text-slate-400">⛟ Informasi Logistik</h2>
+                        <dl class="space-y-3">
+                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6 lg:flex-col lg:items-start lg:gap-1 xl:flex-row xl:items-center xl:gap-4">
+                                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">No. SPPG</dt>
+                                <dd class="break-words text-base font-black text-slate-700">{{ $order['sppg_code'] }} ({{ $order['sppg'] }})</dd>
+                            </div>
+                            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-6 lg:flex-col lg:items-start lg:gap-1 xl:flex-row xl:items-center xl:gap-4">
+                                <dt class="text-xs font-black uppercase tracking-widest text-slate-400">Jadwal Drop</dt>
+                                <dd class="break-words text-base font-black text-slate-700">{{ $dropSchedule }}</dd>
+                            </div>
+                        </dl>
+                    </section>
 
-                    <section class="h-fit rounded-lg bg-slate-950 p-4 text-white shadow-xl shadow-slate-400/30 sm:p-6">
+                    <section class="rounded-lg bg-slate-950 p-4 text-white shadow-xl shadow-slate-400/30 sm:p-6">
                         <p class="text-xs font-black uppercase tracking-[0.18em] text-slate-400">$ &nbsp; Total Invoice Keseluruhan</p>
                         <p class="mt-3 break-words text-xl font-black tracking-tight sm:text-3xl">Rp {{ number_format($invoiceTotal, 0, ',', '.') }}</p>
                         <div class="mt-5 flex items-center justify-between border-t border-white/10 pt-4">

@@ -82,11 +82,12 @@
 
         <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[780px] text-sm">
+                <table class="w-full min-w-[900px] text-sm">
                     <thead class="bg-slate-50/80">
                         <tr>
                             <th class="w-10 px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">#</th>
                             <th class="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Barang</th>
+                            <th class="w-40 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Catatan</th>
                             <th class="w-16 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Grade</th>
                             <th class="w-16 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Qty</th>
                             <th class="w-16 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Satuan</th>
@@ -94,7 +95,6 @@
                             @if (($currentUser['role'] ?? '') !== 'SPPG')
                                 <th class="px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Supplier</th>
                             @endif
-                            <th class="px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Catatan</th>
                             <th class="w-10 px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400"></th>
                         </tr>
                     </thead>
@@ -116,6 +116,7 @@
                                         class="stock-item-input w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                                     >
                                 </td>
+                                <td class="px-2 py-2"><input name="items[{{ $itemIndex }}][request]" value="{{ old("items.$itemIndex.request", $item['request'] ?? '') }}" placeholder="-" class="w-full min-w-[120px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-normal text-slate-600 outline-none"></td>
                                 <td class="px-2 py-2">
                                     <select name="items[{{ $itemIndex }}][grade]" class="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
                                         <option value="A" @selected(old("items.$itemIndex.grade", $item['grade'] ?? 'A') === 'A')>A</option>
@@ -142,7 +143,6 @@
                                         </select>
                                     </td>
                                 @endif
-                                <td class="px-2 py-2"><input name="items[{{ $itemIndex }}][request]" value="{{ old("items.$itemIndex.request", $item['request'] ?? '') }}" placeholder="—" class="w-full min-w-[80px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-normal text-slate-600 outline-none"></td>
                                 <td class="px-2 py-2 text-center">
                                     <button type="button" class="remove-item-btn rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
@@ -216,6 +216,7 @@
                         class="stock-item-input w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10"
                     >
                 </td>
+                <td class="px-2 py-2"><input name="items[${idx}][request]" value="" placeholder="-" class="w-full min-w-[120px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-normal text-slate-600 outline-none"></td>
                 <td class="px-2 py-2">
                     <select name="items[${idx}][grade]" class="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
                         <option value="A">A</option>
@@ -233,7 +234,6 @@
                     </div>
                 </td>
                 ${supplierCol}
-                <td class="px-2 py-2"><input name="items[${idx}][request]" value="" placeholder="—" class="w-full min-w-[80px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-normal text-slate-600 outline-none"></td>
                 <td class="px-2 py-2 text-center">
                     <button type="button" class="remove-item-btn rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
