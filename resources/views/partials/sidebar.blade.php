@@ -6,6 +6,11 @@
         ['label' => 'Invoice', 'route' => 'invoices.index', 'icon' => 'users'],
         ['label' => 'Master Stok', 'route' => 'master-stok.index', 'icon' => 'database'],
     ];
+
+    if (($currentUser['role'] ?? null) === 'ADMIN') {
+        $menu[] = ['label' => 'Master SPPG', 'route' => 'master-sppg.index', 'icon' => 'building'];
+        $menu[] = ['label' => 'Profile', 'route' => 'profile.edit', 'icon' => 'user'];
+    }
 @endphp
 
 <aside class="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">

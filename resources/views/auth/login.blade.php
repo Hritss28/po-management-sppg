@@ -38,11 +38,11 @@
                         <input type="hidden" name="mode" value="sppg">
                         <div class="space-y-2">
                             <label for="sppg_code" class="ml-1 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Kode Unit SPPG</label>
-                            <input id="sppg_code" name="sppg_code" value="{{ old('sppg_code', 'M1101') }}" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold uppercase outline-none transition placeholder:text-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="Contoh: M1101">
+                            <input id="sppg_code" name="sppg_code" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold uppercase outline-none transition placeholder:text-slate-300 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10" placeholder="Contoh: M1101">
                         </div>
-                        <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-[10px] font-bold leading-relaxed text-blue-700">
+                        {{-- <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4 text-[10px] font-bold leading-relaxed text-blue-700">
                             Kode M1101 akan masuk sebagai SPPG-Balongsari. Role SPPG hanya dapat membuat PO dan memantau menu lain.
-                        </div>
+                        </div> --}}
                         <button type="submit" class="w-full rounded-2xl bg-blue-600 py-5 text-sm font-black text-white shadow-xl shadow-blue-600/20 transition hover:bg-blue-700">
                             MULAI PENGADAAN
                         </button>
@@ -51,7 +51,7 @@
                     <form method="POST" action="{{ route('login.store') }}" data-login-panel="admin" class="{{ $isAdmin ? '' : 'hidden' }} space-y-6">
                         @csrf
                         <input type="hidden" name="mode" value="admin">
-                        <div class="rounded-2xl border border-slate-800 bg-slate-900 p-4">
+                        {{-- <div class="rounded-2xl border border-slate-800 bg-slate-900 p-4">
                             <p class="mb-2 text-[10px] font-black uppercase tracking-widest text-slate-400">Informasi Akses</p>
                             <div class="flex gap-6 border-t border-slate-800 pt-3">
                                 <div>
@@ -63,7 +63,7 @@
                                     <p class="text-xs font-black text-white">admin123</p>
                                 </div>
                             </div>
-                        </div>
+                        </div> --}}
                         <div class="space-y-4">
                             <input name="username" value="{{ old('username') }}" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5" placeholder="Username Admin">
                             <input name="password" type="password" required class="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm font-bold outline-none transition focus:border-slate-900 focus:ring-4 focus:ring-slate-900/5" placeholder="Password">

@@ -4,7 +4,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\SppgController;
 use App\Http\Controllers\StockItemController;
 use Illuminate\Support\Facades\Route;
 
@@ -47,3 +49,13 @@ Route::get('/master-stok/{id}', [StockItemController::class, 'show'])->name('mas
 Route::get('/master-stok/{id}/edit', [StockItemController::class, 'edit'])->name('master-stok.edit');
 Route::patch('/master-stok/{id}', [StockItemController::class, 'update'])->name('master-stok.update');
 Route::delete('/master-stok/{id}', [StockItemController::class, 'destroy'])->name('master-stok.destroy');
+
+Route::get('/master-sppg', [SppgController::class, 'index'])->name('master-sppg.index');
+Route::get('/master-sppg/create', [SppgController::class, 'create'])->name('master-sppg.create');
+Route::post('/master-sppg', [SppgController::class, 'store'])->name('master-sppg.store');
+Route::get('/master-sppg/{id}/edit', [SppgController::class, 'edit'])->name('master-sppg.edit');
+Route::patch('/master-sppg/{id}', [SppgController::class, 'update'])->name('master-sppg.update');
+Route::delete('/master-sppg/{id}', [SppgController::class, 'destroy'])->name('master-sppg.destroy');
+
+Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
