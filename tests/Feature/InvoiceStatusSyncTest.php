@@ -58,7 +58,8 @@ test('invoice create shows item unit beside quantity and price inputs', function
     $this->get(route('invoices.create', ['id' => $order->id, 'supplier' => $supplier->name]))
         ->assertOk()
         ->assertSee('value="KG"', false)
-        ->assertSee('value="12"', false);
+        ->assertSee('value="12"', false)
+        ->assertSee('value="15.000"', false);
 });
 
 test('invoice create preview does not open a new tab', function (): void {
@@ -178,6 +179,31 @@ test('creating invoice does not change purchase order item quantity or price', f
     expect((float) $item->qty)->toBe($originalQty)
         ->and($item->price)->toBe($originalPrice)
         ->and($item->is_invoiced)->toBeTrue();
+});
+
+test('creating invoice accepts formatted price input', function (): void {
+    $order = invoiceBankInfoOrder('VIALA PANGAN');
+    $item = $order->items()->firstOrFail();
+
+    $this->post(route('invoices.store', $order->id), [
+        'supplier' => 'VIALA PANGAN',
+        'invoice_no' => 'INV/VIALA/FORMAT-1',
+        'invoice_date' => '2026-05-19',
+        'items' => [
+            [
+                'id' => $item->id,
+                'name' => $item->name,
+                'unit' => $item->unit,
+                'qty' => 150,
+                'price' => '12.500',
+            ],
+        ],
+    ])->assertRedirect(route('invoices.index', ['tab' => 'history']));
+
+    $invoice = Invoice::query()->where('number', 'INV/VIALA/FORMAT-1')->firstOrFail();
+
+    expect($invoice->total_amount)->toBe(1875000)
+        ->and($invoice->items()->first()->price)->toBe(12500);
 });
 
 test('invoice create shows supplier bank accounts', function (string $supplierName, array $expectedTexts): void {

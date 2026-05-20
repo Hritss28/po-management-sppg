@@ -3,9 +3,8 @@
 @section('content')
     @php
         $theme = $supplier['theme'];
-        $total = old('items')
-            ? collect(old('items'))->sum(fn ($item) => ((float) ($item['qty'] ?? 0)) * ((int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0))))
-            : 0;
+        $formItems = collect(old('items', $items->values()->all()));
+        $total = $formItems->sum(fn ($item) => ((float) ($item['qty'] ?? 0)) * ((int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0))));
     @endphp
 
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-3 backdrop-blur-sm sm:p-6">
@@ -54,7 +53,7 @@
                     </div>
                     <div class="flex flex-col gap-2 lg:col-span-3">
                         <button type="submit" class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-blue-600">Simpan & Terbitkan</button>
-                        <button type="submit" formmethod="GET" formtarget="_blank" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">Preview PDF</button>
+                        <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">Preview PDF</button>
                     </div>
                 </div>
 
@@ -64,13 +63,81 @@
                     </div>
                 @endif
 
-                        <button type="submit" class="w-full rounded-xl bg-slate-800 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-300 transition hover:bg-blue-600">
-                            Simpan & Terbitkan Invoice
-                        </button>
-                        <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
-                            Preview PDF
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-wide text-slate-900">Rincian Barang</h2>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                <span id="invoice-items-count">{{ $formItems->count() }}</span> barang siap ditagihkan
+                            </p>
+                        </div>
+                        <button type="button" id="add-invoice-item-btn" class="inline-flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-blue-700 transition hover:border-blue-200 hover:bg-blue-100">
+                            Tambah Barang
                         </button>
                     </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[760px] table-fixed">
+                            <thead class="bg-slate-100 text-[9px] font-black uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="w-12 px-3 py-3 text-left">No</th>
+                                    <th class="px-3 py-3 text-left">Barang</th>
+                                    <th class="w-24 px-2 py-3 text-left">Unit</th>
+                                    <th class="w-28 px-2 py-3 text-left">Qty</th>
+                                    <th class="w-36 px-2 py-3 text-left">Harga</th>
+                                    <th class="w-36 px-2 py-3 text-right">Subtotal</th>
+                                    <th class="w-12 px-2 py-3 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items-tbody" class="divide-y divide-slate-100">
+                                @forelse ($formItems as $index => $item)
+                                    @php
+                                        $price = (int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0));
+                                        $qty = (float) ($item['qty'] ?? 0);
+                                    @endphp
+                                    <tr class="invoice-item-row hover:bg-blue-50/30">
+                                        <td class="px-3 py-2 text-xs font-bold text-slate-400">{{ $loop->iteration }}</td>
+                                        <td class="px-3 py-2">
+                                            <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item['id'] ?? '' }}">
+                                            <input type="text" name="items[{{ $index }}][name]" value="{{ $item['name'] ?? '' }}" list="invoice-stock-items-list" autocomplete="off" required class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="text" name="items[{{ $index }}][unit]" value="{{ $item['unit'] ?? 'KG' }}" required class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input name="items[{{ $index }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" required class="invoice-qty w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                                <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
+                                                <input name="items[{{ $index }}][price]" type="text" inputmode="numeric" value="{{ number_format($price, 0, ',', '.') }}" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                                            </div>
+                                        </td>
+                                        <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">{{ number_format($qty * $price, 0, ',', '.') }}</span></td>
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" class="remove-invoice-item rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr id="invoice-empty-state">
+                                        <td colspan="7" class="px-4 py-8 text-center text-xs font-bold text-slate-400">Belum ada barang untuk supplier ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {{-- <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button type="submit" class="w-full rounded-xl bg-slate-800 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-300 transition hover:bg-blue-600">
+                        Simpan & Terbitkan Invoice
+                    </button>
+                    <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                        Preview PDF
+                    </button>
+                </div> --}}
 
                     {{-- Datalist autocomplete --}}
                     <datalist id="invoice-stock-items-list">
@@ -78,7 +145,6 @@
                             <option value="{{ $stock['name'] }}" data-unit="{{ $stock['unit'] ?? 'KG' }}"></option>
                         @endforeach
                     </datalist>
-                </section>
             </div>
 
             <footer class="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:px-6">
@@ -101,6 +167,10 @@
 
             const onlyDigits = (value) => String(value).replace(/[^\d]/g, '');
             const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value);
+            const formatPriceInput = (input) => {
+                const digits = onlyDigits(input.value);
+                input.value = digits ? formatNumber(Number(digits)) : '';
+            };
 
             // Stock items map for autocomplete unit fill
             const stockItemsByName = {};
@@ -109,6 +179,8 @@
             @endforeach
 
             const refreshTotals = () => {
+                if (!tbody) return;
+
                 let total = 0;
                 const rows = tbody.querySelectorAll('.invoice-item-row');
                 if (itemsCountLabel) itemsCountLabel.textContent = rows.length;
@@ -149,7 +221,7 @@
                     <td class="px-2 py-2">
                         <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                             <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                            <input name="items[${idx}][price]" type="text" inputmode="numeric" value="0" placeholder="0" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                            <input name="items[${idx}][price]" type="text" inputmode="numeric" value="" placeholder="0" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
                         </div>
                     </td>
                     <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">0</span></td>
@@ -163,42 +235,60 @@
 
             if (addBtn) {
                 addBtn.addEventListener('click', () => {
+                    if (!tbody) return;
+
                     if (emptyState) emptyState.remove();
                     tbody.insertAdjacentHTML('beforeend', buildNewRow(itemIndex));
                     itemIndex++;
                     const newRow = tbody.lastElementChild;
                     newRow.querySelectorAll('.invoice-qty, .invoice-price').forEach(input => {
-                        input.addEventListener('input', refreshTotals);
+                        input.addEventListener('input', () => {
+                            if (input.classList.contains('invoice-price')) formatPriceInput(input);
+                            refreshTotals();
+                        });
                     });
                     refreshTotals();
                 });
             }
 
             // Remove item
-            tbody.addEventListener('click', (e) => {
-                const removeBtn = e.target.closest('.remove-invoice-item');
-                if (removeBtn) {
-                    removeBtn.closest('.invoice-item-row').remove();
-                    refreshTotals();
-                }
-            });
+            if (tbody) {
+                tbody.addEventListener('click', (e) => {
+                    const removeBtn = e.target.closest('.remove-invoice-item');
+                    if (removeBtn) {
+                        removeBtn.closest('.invoice-item-row').remove();
+                        refreshTotals();
+                    }
+                });
+            }
 
             // Autocomplete unit
-            tbody.addEventListener('input', (e) => {
-                if (e.target.classList.contains('invoice-item-name')) {
-                    const typed = String(e.target.value || '').trim().toUpperCase();
-                    const matchedUnit = stockItemsByName[typed];
-                    if (matchedUnit) {
-                        const row = e.target.closest('.invoice-item-row');
-                        const unitInput = row.querySelector('.item-unit-hidden');
-                        if (unitInput) unitInput.value = matchedUnit;
+            if (tbody) {
+                tbody.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('invoice-item-name')) {
+                        const typed = String(e.target.value || '').trim().toUpperCase();
+                        const matchedUnit = stockItemsByName[typed];
+                        if (matchedUnit) {
+                            const row = e.target.closest('.invoice-item-row');
+                            const unitInput = row.querySelector('.item-unit-hidden');
+                            if (unitInput) unitInput.value = matchedUnit;
+                        }
                     }
-                }
-            });
+                });
+            }
 
             // Initial listeners
             form.querySelectorAll('.invoice-qty, .invoice-price').forEach((input) => {
-                input.addEventListener('input', refreshTotals);
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('invoice-price')) formatPriceInput(input);
+                    refreshTotals();
+                });
+            });
+
+            form.addEventListener('submit', () => {
+                form.querySelectorAll('.invoice-price').forEach((input) => {
+                    input.value = onlyDigits(input.value);
+                });
             });
 
             refreshTotals();

@@ -201,6 +201,22 @@ class InvoiceController extends Controller
 
         $this->authorizeAdmin();
         $order = $this->findOrderModel($id);
+        $request->merge([
+            'items' => collect($request->input('items', []))
+                ->map(function (mixed $item): mixed {
+                    if (! is_array($item)) {
+                        return $item;
+                    }
+
+                    if (array_key_exists('price', $item)) {
+                        $item['price'] = (int) preg_replace('/\D+/', '', (string) $item['price']);
+                    }
+
+                    return $item;
+                })
+                ->all(),
+        ]);
+
         $validated = $request->validate([
             'supplier' => ['required', 'exists:suppliers,name'],
             'invoice_no' => ['required', 'string', 'max:80', 'unique:invoices,number'],
