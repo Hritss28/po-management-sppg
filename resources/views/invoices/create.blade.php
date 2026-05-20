@@ -32,7 +32,7 @@
             </header>
 
             <div class="space-y-4 px-4 py-4 sm:px-6 sm:py-5">
-                {{-- Top: Ringkasan + Rekening (horizontal) --}}
+                {{-- Top: Ringkasan + Rekening + Tombol --}}
                 <div class="grid grid-cols-1 gap-3 lg:grid-cols-12">
                     <div class="flex items-center justify-between rounded-xl border border-slate-200 bg-white p-4 shadow-sm lg:col-span-4">
                         <div>
@@ -54,7 +54,7 @@
                     </div>
                     <div class="flex flex-col gap-2 lg:col-span-3">
                         <button type="submit" class="w-full rounded-lg bg-slate-900 px-4 py-2.5 text-xs font-bold uppercase tracking-wide text-white shadow-sm transition hover:bg-blue-600">Simpan & Terbitkan</button>
-                        <button type="submit" formmethod="GET" formtarget="_blank" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">Preview PDF</button>
+                        <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold uppercase tracking-wide text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">Preview PDF</button>
                     </div>
                 </div>
 
@@ -64,15 +64,70 @@
                     </div>
                 @endif
 
-                        <button type="submit" class="w-full rounded-xl bg-slate-800 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-300 transition hover:bg-blue-600">
-                            Simpan & Terbitkan Invoice
-                        </button>
-                        <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
-                            Preview PDF
-                        </button>
+                {{-- Tabel Items --}}
+                <section>
+                    <div class="mb-3 flex items-center justify-between">
+                        <h2 class="flex items-center gap-2 text-sm font-black uppercase tracking-tight text-slate-700">
+                            <span class="text-lg text-slate-300">◇</span>
+                            Daftar Barang (<span id="invoice-items-count">{{ $items->count() }}</span>)
+                        </h2>
+                        <button type="button" id="add-invoice-item-btn" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-50">＋ Tambah</button>
                     </div>
 
-                    {{-- Datalist autocomplete --}}
+                    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full min-w-[700px] text-sm">
+                                <thead class="bg-slate-50/80">
+                                    <tr>
+                                        <th class="w-10 px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">#</th>
+                                        <th class="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Nama Barang</th>
+                                        <th class="w-20 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Satuan</th>
+                                        <th class="w-24 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Qty</th>
+                                        <th class="w-36 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Harga</th>
+                                        <th class="w-32 px-2 py-2.5 text-right text-[10px] font-bold uppercase tracking-wide text-slate-400">Subtotal</th>
+                                        <th class="w-10 px-2 py-2.5"></th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100" id="invoice-items-tbody">
+                                    @forelse ($items as $item)
+                                        @php
+                                            $itemIndex = $loop->index;
+                                            $price = old("items.$itemIndex.price", $item['price'] > 0 ? $item['price'] : '');
+                                            $qty = old("items.$itemIndex.qty", $item['qty']);
+                                            $unit = strtoupper(old("items.$itemIndex.unit", $item['unit']));
+                                            $name = old("items.$itemIndex.name", $item['name']);
+                                        @endphp
+                                        <tr class="invoice-item-row hover:bg-slate-50/50">
+                                            <td class="px-3 py-2 text-xs font-bold text-slate-400">{{ $loop->iteration }}</td>
+                                            <td class="px-3 py-2">
+                                                <input type="hidden" name="items[{{ $itemIndex }}][id]" value="{{ $item['id'] ?? '' }}">
+                                                <input type="text" name="items[{{ $itemIndex }}][name]" list="invoice-stock-items-list" autocomplete="off" value="{{ $name }}" class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" placeholder="Ketik / pilih barang...">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input type="text" name="items[{{ $itemIndex }}][unit]" value="{{ $unit }}" class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <input name="items[{{ $itemIndex }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" class="invoice-qty w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none">
+                                            </td>
+                                            <td class="px-2 py-2">
+                                                <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                                    <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
+                                                    <input name="items[{{ $itemIndex }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ $price }}" placeholder="0" class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                                                </div>
+                                            </td>
+                                            <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">0</span></td>
+                                            <td class="px-2 py-2"></td>
+                                        </tr>
+                                    @empty
+                                        <tr id="invoice-empty-state">
+                                            <td colspan="7" class="px-3 py-8 text-center text-sm font-bold text-slate-400">Tidak ada item. Klik "Tambah" untuk menambah barang.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
                     <datalist id="invoice-stock-items-list">
                         @foreach ($stockItems as $stock)
                             <option value="{{ $stock['name'] }}" data-unit="{{ $stock['unit'] ?? 'KG' }}"></option>
@@ -102,7 +157,6 @@
             const onlyDigits = (value) => String(value).replace(/[^\d]/g, '');
             const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value);
 
-            // Stock items map for autocomplete unit fill
             const stockItemsByName = {};
             @foreach ($stockItems as $stock)
                 stockItemsByName['{{ strtoupper($stock['name']) }}'] = '{{ $stock['unit'] ?? 'KG' }}';
@@ -114,7 +168,6 @@
                 if (itemsCountLabel) itemsCountLabel.textContent = rows.length;
 
                 rows.forEach((row, index) => {
-                    // Update row number
                     const numCell = row.querySelector('td:first-child');
                     if (numCell) numCell.textContent = index + 1;
 
@@ -174,7 +227,6 @@
                 });
             }
 
-            // Remove item
             tbody.addEventListener('click', (e) => {
                 const removeBtn = e.target.closest('.remove-invoice-item');
                 if (removeBtn) {
@@ -183,7 +235,6 @@
                 }
             });
 
-            // Autocomplete unit
             tbody.addEventListener('input', (e) => {
                 if (e.target.classList.contains('invoice-item-name')) {
                     const typed = String(e.target.value || '').trim().toUpperCase();
@@ -196,7 +247,6 @@
                 }
             });
 
-            // Initial listeners
             form.querySelectorAll('.invoice-qty, .invoice-price').forEach((input) => {
                 input.addEventListener('input', refreshTotals);
             });
