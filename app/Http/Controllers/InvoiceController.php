@@ -37,6 +37,10 @@ class InvoiceController extends Controller
             'date_filter' => ['nullable', 'in:all,today,range'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
+            'po_date_from' => ['nullable', 'date'],
+            'po_date_to' => ['nullable', 'date'],
+            'drop_from' => ['nullable', 'date'],
+            'drop_to' => ['nullable', 'date'],
         ]);
 
         $filters = [
@@ -47,6 +51,10 @@ class InvoiceController extends Controller
             'date_filter' => $filters['date_filter'] ?? 'all',
             'date_from' => $filters['date_from'] ?? '',
             'date_to' => $filters['date_to'] ?? '',
+            'po_date_from' => $filters['po_date_from'] ?? '',
+            'po_date_to' => $filters['po_date_to'] ?? '',
+            'drop_from' => $filters['drop_from'] ?? '',
+            'drop_to' => $filters['drop_to'] ?? '',
         ];
 
         if (($filters['date_from'] !== '' || $filters['date_to'] !== '') && $filters['date_filter'] !== 'today') {
@@ -155,6 +163,24 @@ class InvoiceController extends Controller
             if ($filters['date_to'] !== '') {
                 $query->whereDate('date', '<=', $filters['date_to']);
             }
+        }
+
+        // Filter berdasarkan tanggal PO
+        if ($filters['po_date_from'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('date', '>=', $filters['po_date_from']));
+        }
+
+        if ($filters['po_date_to'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('date', '<=', $filters['po_date_to']));
+        }
+
+        // Filter berdasarkan tanggal dropping
+        if ($filters['drop_from'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('droping_date', '>=', $filters['drop_from']));
+        }
+
+        if ($filters['drop_to'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('droping_date', '<=', $filters['drop_to']));
         }
     }
 

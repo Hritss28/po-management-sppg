@@ -25,6 +25,10 @@ class PurchaseOrderController extends Controller
         $query = $this->visibleOrdersQuery();
         $search = strtolower($request->string('search')->toString());
         $status = $request->string('status')->toString();
+        $dateFrom = $request->string('date_from')->toString();
+        $dateTo = $request->string('date_to')->toString();
+        $dropFrom = $request->string('drop_from')->toString();
+        $dropTo = $request->string('drop_to')->toString();
 
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -40,6 +44,22 @@ class PurchaseOrderController extends Controller
             $query->where('status', $status);
         }
 
+        if ($dateFrom !== '') {
+            $query->whereDate('date', '>=', $dateFrom);
+        }
+
+        if ($dateTo !== '') {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+
+        if ($dropFrom !== '') {
+            $query->whereDate('droping_date', '>=', $dropFrom);
+        }
+
+        if ($dropTo !== '') {
+            $query->whereDate('droping_date', '<=', $dropTo);
+        }
+
         $orders = $query
             ->latest('id')
             ->paginate(10)
@@ -50,7 +70,14 @@ class PurchaseOrderController extends Controller
             'currentUser' => $this->currentUser(),
             'orders' => $orders,
             'stats' => $this->poStats($this->visibleOrders()),
-            'filters' => ['search' => $request->string('search')->toString(), 'status' => $status ?: 'ALL'],
+            'filters' => [
+                'search' => $request->string('search')->toString(),
+                'status' => $status ?: 'ALL',
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'drop_from' => $dropFrom,
+                'drop_to' => $dropTo,
+            ],
         ]);
     }
 

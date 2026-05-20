@@ -167,13 +167,33 @@
                         </label>
 
                         <label class="space-y-1">
-                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Dari</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Inv Dari</span>
                             <input name="date_from" value="{{ $filters['date_from'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
                         </label>
 
                         <label class="space-y-1">
-                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Sampai</span>
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Inv Sampai</span>
                             <input name="date_to" value="{{ $filters['date_to'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">PO Dari</span>
+                            <input name="po_date_from" value="{{ $filters['po_date_from'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">PO Sampai</span>
+                            <input name="po_date_to" value="{{ $filters['po_date_to'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Drop Dari</span>
+                            <input name="drop_from" value="{{ $filters['drop_from'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Drop Sampai</span>
+                            <input name="drop_to" value="{{ $filters['drop_to'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
                         </label>
 
                         <button type="submit" class="h-10 rounded-lg bg-blue-600 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">Terapkan</button>

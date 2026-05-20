@@ -56,18 +56,37 @@
             </article>
         </div>
 
-        <form method="GET" class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 sm:p-5 lg:flex-row">
+        <form method="GET" class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-md shadow-slate-200/70 sm:p-5 lg:flex-row lg:flex-wrap lg:items-end">
             <div class="relative min-w-0 flex-1">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-lg text-slate-400">⌕</span>
                 <input name="search" value="{{ $filters['search'] ?? '' }}" type="search" placeholder="Cari berdasarkan No PO, barang, atau nama pembuat..." class="w-full rounded-lg border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-sm font-semibold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10">
             </div>
-            <div class="relative w-full lg:w-52">
+            <div class="relative w-full lg:w-44">
                 <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">▽</span>
                 <select name="status" class="w-full appearance-none rounded-lg border border-slate-200 bg-slate-50 py-3 pl-11 pr-4 text-xs font-black uppercase tracking-wider text-slate-700 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10" onchange="this.form.submit()">
                     @foreach (['ALL' => 'Semua Status', 'VALID' => 'Valid', 'PROCESSING' => 'Proses', 'INVOICED' => 'Tertagih', 'COMPLETED' => 'Selesai', 'CANCELLED' => 'Dibatalkan'] as $value => $label)
                         <option value="{{ $value }}" @selected(($filters['status'] ?? 'ALL') === $value)>{{ $label }}</option>
                     @endforeach
                 </select>
+            </div>
+            <div class="flex items-end gap-2">
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl PO Dari</span>
+                    <input name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
+                    <input name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl Drop Dari</span>
+                    <input name="drop_from" type="date" value="{{ $filters['drop_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
+                    <input name="drop_to" type="date" value="{{ $filters['drop_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">Filter</button>
             </div>
         </form>
 
