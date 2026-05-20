@@ -141,14 +141,14 @@
                                     @if ($hasDelivery)
                                         <p class="max-w-[180px] truncate text-xs font-black text-slate-950">{{ $order['delivery']['number'] }}</p>
                                         <p class="mt-1 text-[10px] font-bold text-emerald-600">
-                                            {{ date('d/m/Y', strtotime($order['delivery']['date'])) }}
-                                            @php
-                                                $jamKirim = $order['delivery']['time'] ?? $order['droping_time'] ?? null;
-                                            @endphp
-                                            @if (! empty($jamKirim))
-                                                · {{ $jamKirim }}
+                                            {{ !empty($order['droping_date']) ? date('d/m/Y', strtotime($order['droping_date'])) : '-' }}
+                                            @if (! empty($order['droping_time']))
+                                                · {{ $order['droping_time'] }}
                                             @endif
                                         </p>
+                                        @if (! empty($order['delivery']['date']))
+                                            <p class="mt-0.5 text-[9px] italic text-slate-400">Tgl Diterima: {{ date('d/m/Y', strtotime($order['delivery']['date'])) }}@if (!empty($order['delivery']['time'])), {{ $order['delivery']['time'] }}@endif</p>
+                                        @endif
                                         @if (! empty($order['delivery']['driver']))
                                             <p class="mt-0.5 text-[10px] font-semibold text-slate-500">Driver: {{ $order['delivery']['driver'] }}</p>
                                         @endif

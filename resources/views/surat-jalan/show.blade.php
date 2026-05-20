@@ -16,8 +16,10 @@
         $pjSppg       = old('pj_sppg', $delivery['pj_sppg'] ?? $sppg['pic_name']);
         $whatsapp     = old('whatsapp', $delivery['whatsapp'] ?? $sppg['whatsapp']);
 
-        $deliveryDate = old('delivery_date', $delivery['date'] ?? ($order['droping_date'] ?? now()->format('Y-m-d')));
-        $deliveryTime = old('delivery_time', $delivery['time'] ?? ($order['droping_time'] ?? ''));
+        $deliveryDate = old('delivery_date', $order['droping_date'] ?? now()->format('Y-m-d'));
+        $deliveryTime = old('delivery_time', $order['droping_time'] ?? '');
+        $receivedDate = $delivery['date'] ?? null;
+        $receivedTime = $delivery['time'] ?? null;
         $driver       = old('driver', $delivery['driver'] ?? '');
         $notes        = old('notes', $delivery['notes'] ?? '');
 
@@ -117,6 +119,9 @@
                                     <input name="driver" value="{{ $driver }}" @readonly(! $isAdmin) placeholder="Nama Pengirim" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
                                 </label>
                             </div>
+                            @if ($receivedDate)
+                                <p class="mt-1 text-[9px] italic font-bold text-green-600">Tgl Diterima: {{ \Illuminate\Support\Carbon::parse($receivedDate)->translatedFormat('d/m/Y') }}@if ($receivedTime), {{ $receivedTime }}@endif</p>
+                            @endif
                             <label class="block">
                                 <span class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Keterangan</span>
                                 <textarea name="notes" rows="2" @readonly(! $isAdmin) placeholder="Contoh: Barang diterima lengkap..." class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">{{ $notes }}</textarea>
