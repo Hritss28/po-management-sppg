@@ -22,9 +22,34 @@ class PurchaseOrderController extends Controller
             return $redirect;
         }
 
+        if ($request->has('clear')) {
+            $request->session()->forget('po_filters');
+
+            return redirect()->route('purchase-orders.index');
+        }
+
+        $hasQueryParams = $request->has('search') || $request->has('status') || $request->has('po_date') || $request->has('drop_date') || $request->has('page');
+
+        if ($hasQueryParams) {
+            $filters = [
+                'search' => $request->string('search')->toString(),
+                'status' => $request->string('status')->toString(),
+                'po_date' => $request->string('po_date')->toString(),
+                'drop_date' => $request->string('drop_date')->toString(),
+                'page' => $request->string('page')->toString(),
+            ];
+            $request->session()->put('po_filters', $filters);
+        } else {
+            if ($request->session()->has('po_filters')) {
+                return redirect()->route('purchase-orders.index', $request->session()->get('po_filters'));
+            }
+        }
+
         $query = $this->visibleOrdersQuery();
         $search = strtolower($request->string('search')->toString());
         $status = $request->string('status')->toString();
+        $poDate = $request->string('po_date')->toString();
+        $dropDate = $request->string('drop_date')->toString();
 
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -40,6 +65,14 @@ class PurchaseOrderController extends Controller
             $query->where('status', $status);
         }
 
+        if ($poDate !== '') {
+            $query->whereDate('date', $poDate);
+        }
+
+        if ($dropDate !== '') {
+            $query->whereDate('droping_date', $dropDate);
+        }
+
         $orders = $query
             ->latest('id')
             ->paginate(10)
@@ -50,7 +83,12 @@ class PurchaseOrderController extends Controller
             'currentUser' => $this->currentUser(),
             'orders' => $orders,
             'stats' => $this->poStats($this->visibleOrders()),
-            'filters' => ['search' => $request->string('search')->toString(), 'status' => $status ?: 'ALL'],
+            'filters' => [
+                'search' => $request->string('search')->toString(),
+                'status' => $status ?: 'ALL',
+                'po_date' => $poDate,
+                'drop_date' => $dropDate,
+            ],
         ]);
     }
 
