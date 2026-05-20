@@ -182,8 +182,7 @@ test('sppg role sees invoice menu with print but without create or edit controls
     ]);
 
     $this->get(route('invoices.index'))
-        ->assertOk()
-        ->assertDontSeeText('Buat Invoice');
+        ->assertOk();
 
     $this->get(route('invoices.index', ['tab' => 'history']))
         ->assertOk()

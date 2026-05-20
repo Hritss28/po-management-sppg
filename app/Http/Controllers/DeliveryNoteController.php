@@ -162,8 +162,8 @@ class DeliveryNoteController extends Controller
                 ['purchase_order_id' => $order->id],
                 [
                     'number' => $validated['surat_jalan_no'],
-                    'date' => $validated['delivery_date'],
-                    'time' => $validated['delivery_time'] ?? null,
+                    'date' => now()->toDateString(),
+                    'time' => now()->format('H:i'),
                     'driver' => $validated['driver'] ?: 'Nama Pengirim',
                     'notes' => $validated['notes'] ?: '-',
                     'kepada' => $validated['kepada'],
