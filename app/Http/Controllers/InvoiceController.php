@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseOrderItem;
+use App\Models\Sppg;
 use App\Models\Supplier;
 use App\Traits\ProcurementHelpers;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -25,19 +27,50 @@ class InvoiceController extends Controller
 
         $orders = $this->visibleOrdersQuery()->latest('id')->get();
         $visibleOrderIds = $orders->pluck('id');
-        $historyInvoices = Invoice::query()
+
+        $filters = $request->validate([
+            'tab' => ['nullable', 'in:pending,history'],
+            'search' => ['nullable', 'string', 'max:120'],
+            'status' => ['nullable', 'in:all,PAID,UNPAID'],
+            'supplier' => ['nullable', 'string', 'exists:suppliers,name'],
+            'sppg' => ['nullable', 'string', 'exists:sppgs,code'],
+            'date_filter' => ['nullable', 'in:all,today,range'],
+            'date_from' => ['nullable', 'date'],
+            'date_to' => ['nullable', 'date'],
+        ]);
+
+        $filters = [
+            'search' => $filters['search'] ?? '',
+            'status' => $filters['status'] ?? 'all',
+            'supplier' => $filters['supplier'] ?? '',
+            'sppg' => $filters['sppg'] ?? '',
+            'date_filter' => $filters['date_filter'] ?? 'all',
+            'date_from' => $filters['date_from'] ?? '',
+            'date_to' => $filters['date_to'] ?? '',
+        ];
+
+        if (($filters['date_from'] !== '' || $filters['date_to'] !== '') && $filters['date_filter'] !== 'today') {
+            $filters['date_filter'] = 'range';
+        }
+
+        $historyQuery = Invoice::query()
             ->with(['purchaseOrder.sppg', 'items', 'supplier'])
-            ->whereIn('purchase_order_id', $visibleOrderIds)
+            ->whereIn('purchase_order_id', $visibleOrderIds);
+
+        $publishedKeys = (clone $historyQuery)
+            ->get()
+            ->map(fn (Invoice $invoice): string => $invoice->purchase_order_id.'|'.$invoice->supplier_name)
+            ->all();
+
+        $this->applyHistoryInvoiceFilters($historyQuery, $filters);
+
+        $historyInvoices = $historyQuery
             ->latest('id')
             ->get()
             ->map(fn (Invoice $invoice): array => [
                 'order' => $this->orderToArray($invoice->purchaseOrder),
                 'invoice' => $this->invoiceToArray($invoice),
             ]);
-
-        $publishedKeys = $historyInvoices
-            ->map(fn (array $entry): string => $entry['order']['id'].'|'.$entry['invoice']['supplier'])
-            ->all();
 
         $pendingInvoices = $orders
             ->filter(fn (PurchaseOrder $order): bool => in_array($order->status, ['COMPLETED', 'INVOICED'], true))
@@ -64,6 +97,9 @@ class InvoiceController extends Controller
             'pendingInvoices' => $paginatedPendingInvoices,
             'historyInvoices' => $paginatedHistoryInvoices,
             'activeTab' => $request->string('tab')->toString() === 'history' ? 'history' : 'pending',
+            'filters' => $filters,
+            'suppliers' => Supplier::query()->orderBy('name')->pluck('name'),
+            'sppgs' => $this->filterableInvoiceSppgs(),
             'stats' => [
                 'total' => $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['total_amount']),
                 'paid' => $historyInvoices->sum(fn (array $entry): int|float => $entry['invoice']['status'] === 'PAID' ? $entry['invoice']['total_amount'] : 0),
@@ -71,6 +107,66 @@ class InvoiceController extends Controller
                 'count' => $historyInvoices->count(),
             ],
         ]);
+    }
+
+    /**
+     * @param  array{search: string, status: string, supplier: string, sppg: string, date_filter: string, date_from: string, date_to: string}  $filters
+     */
+    private function applyHistoryInvoiceFilters(Builder $query, array $filters): void
+    {
+        $search = strtolower($filters['search']);
+
+        if ($search !== '') {
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder
+                    ->whereRaw('LOWER(number) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(supplier_name) LIKE ?', ["%{$search}%"])
+                    ->orWhereHas('items', fn (Builder $item): Builder => $item->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]))
+                    ->orWhereHas('purchaseOrder', fn (Builder $order): Builder => $order->whereRaw('LOWER(number) LIKE ?', ["%{$search}%"]))
+                    ->orWhereHas('purchaseOrder.sppg', function (Builder $sppg) use ($search): void {
+                        $sppg
+                            ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                            ->orWhereRaw('LOWER(code) LIKE ?', ["%{$search}%"]);
+                    });
+            });
+        }
+
+        if ($filters['status'] !== 'all') {
+            $query->where('status', $filters['status']);
+        }
+
+        if ($filters['supplier'] !== '') {
+            $query->where('supplier_name', $filters['supplier']);
+        }
+
+        if ($filters['sppg'] !== '') {
+            $query->whereHas('purchaseOrder.sppg', fn (Builder $sppg): Builder => $sppg->where('code', $filters['sppg']));
+        }
+
+        if ($filters['date_filter'] === 'today') {
+            $query->whereDate('date', now()->toDateString());
+        }
+
+        if ($filters['date_filter'] === 'range' && ($filters['date_from'] !== '' || $filters['date_to'] !== '')) {
+            if ($filters['date_from'] !== '') {
+                $query->whereDate('date', '>=', $filters['date_from']);
+            }
+
+            if ($filters['date_to'] !== '') {
+                $query->whereDate('date', '<=', $filters['date_to']);
+            }
+        }
+    }
+
+    private function filterableInvoiceSppgs(): Collection
+    {
+        return Sppg::query()
+            ->when(
+                ($this->currentUser()['role'] ?? null) === 'SPPG',
+                fn (Builder $query): Builder => $query->where('code', $this->currentUser()['id'])
+            )
+            ->orderBy('name')
+            ->get();
     }
 
     public function create(Request $request, string $id): View|RedirectResponse

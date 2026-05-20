@@ -83,6 +83,64 @@ test('invoice history shows item details', function (): void {
         ->assertSeeText('Rp 500.000');
 });
 
+test('invoice history can be searched and filtered', function (): void {
+    [$order, $invoice] = invoiceStatusFixture('PAID');
+    $invoice->items()->create([
+        'name' => 'BAWANG MERAH',
+        'qty' => 12,
+        'unit' => 'KG',
+        'price' => 15000,
+        'subtotal' => 180000,
+    ]);
+
+    $sppg = Sppg::query()->create([
+        'code' => 'M1102',
+        'name' => 'SPPG Pulo',
+    ]);
+    $supplier = Supplier::query()->create(['name' => 'DUNIA BUMBU MOJOKERTO']);
+    $matchingOrder = PurchaseOrder::query()->create([
+        'number' => '15/PO/19052026/DBM/2026',
+        'date' => '2026-05-19',
+        'created_by' => 'Admin Supplier',
+        'sppg_id' => $sppg->id,
+        'status' => 'INVOICED',
+    ]);
+    $matchingInvoice = Invoice::query()->create([
+        'purchase_order_id' => $matchingOrder->id,
+        'supplier_id' => $supplier->id,
+        'number' => 'INV/DUNIA/FILTER',
+        'date' => '2026-05-20',
+        'supplier_name' => $supplier->name,
+        'status' => 'UNPAID',
+        'total_amount' => 150000,
+    ]);
+    $matchingInvoice->items()->create([
+        'name' => 'PISANG',
+        'qty' => 15,
+        'unit' => 'PCS',
+        'price' => 10000,
+        'subtotal' => 150000,
+    ]);
+
+    $this->get(route('invoices.index', [
+        'tab' => 'history',
+        'search' => 'pisang',
+        'status' => 'UNPAID',
+        'supplier' => 'DUNIA BUMBU MOJOKERTO',
+        'sppg' => 'M1102',
+        'date_from' => '2026-05-20',
+        'date_to' => '2026-05-20',
+    ]))
+        ->assertOk()
+        ->assertSeeText('INV/DUNIA/FILTER')
+        ->assertSeeText('PISANG')
+        ->assertSeeText('SPPG Pulo')
+        ->assertSeeText('Rp 150.000')
+        ->assertDontSeeText($invoice->number)
+        ->assertDontSeeText($order->number)
+        ->assertDontSeeText('BAWANG MERAH');
+});
+
 test('creating invoice syncs item quantity and price back to purchase order', function (): void {
     $order = invoiceBankInfoOrder('VIALA PANGAN');
     $item = $order->items()->firstOrFail();

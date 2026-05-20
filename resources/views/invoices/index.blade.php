@@ -1,6 +1,27 @@
 @extends('layouts.app', ['title' => 'Invoice'])
 
 @section('content')
+    <style>
+        .invoice-history-filter-grid {
+            display: grid;
+            grid-template-columns: minmax(190px, 1.35fr) minmax(120px, 0.7fr) minmax(170px, 1fr) minmax(170px, 1fr) minmax(135px, 0.8fr) minmax(135px, 0.8fr) minmax(105px, 0.55fr) minmax(90px, 0.5fr);
+            gap: 0.5rem;
+            align-items: end;
+        }
+
+        @media (max-width: 1280px) {
+            .invoice-history-filter-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 760px) {
+            .invoice-history-filter-grid {
+                grid-template-columns: minmax(0, 1fr);
+            }
+        }
+    </style>
+
     <section class="mx-auto max-w-[1440px] space-y-4">
         {{-- Tabs --}}
         <nav class="flex gap-2 overflow-x-auto pb-1">
@@ -95,6 +116,71 @@
                     <p class="mt-1.5 text-lg font-black text-slate-950">{{ $stats['count'] }} Invoice</p>
                 </article>
             </section>
+
+            {{-- Filter Riwayat --}}
+            <form method="GET" action="{{ route('invoices.index') }}" class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <input type="hidden" name="tab" value="history">
+                <div class="space-y-3">
+                    <div class="flex flex-col justify-between gap-1 sm:flex-row sm:items-end">
+                        <div>
+                            <h2 class="text-sm font-black tracking-tight text-slate-950">Filter Riwayat Invoice</h2>
+                            <p class="mt-0.5 text-xs font-medium text-slate-500">Cari invoice berdasarkan nomor, supplier, SPPG, referensi PO, atau barang.</p>
+                        </div>
+                    </div>
+
+                    <div class="invoice-history-filter-grid">
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Cari</span>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-black text-slate-400">Cari</span>
+                                <input name="search" value="{{ $filters['search'] ?? '' }}" type="search" placeholder="No invoice / PO / barang..." class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 py-2 pl-12 pr-3 text-sm font-semibold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                            </div>
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Status</span>
+                            <select name="status" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                                <option value="all" @selected(($filters['status'] ?? 'all') === 'all')>Semua</option>
+                                <option value="PAID" @selected(($filters['status'] ?? 'all') === 'PAID')>Lunas</option>
+                                <option value="UNPAID" @selected(($filters['status'] ?? 'all') === 'UNPAID')>Belum Bayar</option>
+                            </select>
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Supplier</span>
+                            <select name="supplier" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                                <option value="">Semua Supplier</option>
+                                @foreach ($suppliers as $supplier)
+                                    <option value="{{ $supplier }}" @selected(($filters['supplier'] ?? '') === $supplier)>{{ $supplier }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">SPPG</span>
+                            <select name="sppg" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                                <option value="">Semua SPPG</option>
+                                @foreach ($sppgs as $sppg)
+                                    <option value="{{ $sppg->code }}" @selected(($filters['sppg'] ?? '') === $sppg->code)>{{ $sppg->code }} - {{ $sppg->name }}</option>
+                                @endforeach
+                            </select>
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Dari</span>
+                            <input name="date_from" value="{{ $filters['date_from'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <label class="space-y-1">
+                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400">Sampai</span>
+                            <input name="date_to" value="{{ $filters['date_to'] ?? '' }}" type="date" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+
+                        <button type="submit" class="h-10 rounded-lg bg-blue-600 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">Terapkan</button>
+                        <a href="{{ route('invoices.index', ['tab' => 'history']) }}" class="flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-5 text-xs font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-50">Reset</a>
+                    </div>
+                </div>
+            </form>
 
             {{-- Tabel Riwayat --}}
             <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
