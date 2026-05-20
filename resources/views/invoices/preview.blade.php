@@ -116,7 +116,11 @@
                                     <td class="px-3 py-3 text-center text-[10px] text-slate-500">{{ $loop->iteration }}</td>
                                     <td class="px-3 py-3 text-[10px] font-black text-slate-950">
                                         {{ $item['name'] }}
-                                        <p class="mt-0.5 text-[8px] font-black uppercase text-slate-400">PO Ref: {{ $order['number'] }}</p>
+                                        @if (empty($item['purchase_order_item_id']))
+                                            <p class="mt-0.5 text-[8px] font-black uppercase text-amber-600">Barang tidak termasuk dalam PO</p>
+                                        @else
+                                            <p class="mt-0.5 text-[8px] font-black uppercase text-slate-400">PO Ref: {{ $order['number'] }}</p>
+                                        @endif
                                     </td>
                                     <td class="px-3 py-3 text-center text-[10px] text-slate-600">{{ $item['unit'] }}</td>
                                     <td class="px-3 py-3 text-center text-[10px] font-black">{{ $item['qty'] }}</td>

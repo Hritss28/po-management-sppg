@@ -3,9 +3,8 @@
 @section('content')
     @php
         $theme = $supplier['theme'];
-        $total = old('items')
-            ? collect(old('items'))->sum(fn ($item) => ((float) ($item['qty'] ?? 0)) * ((int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0))))
-            : 0;
+        $formItems = collect(old('items', $items->values()->all()));
+        $total = $formItems->sum(fn ($item) => ((float) ($item['qty'] ?? 0)) * ((int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0))));
     @endphp
 
     <div class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/45 p-3 backdrop-blur-sm sm:p-6">
@@ -64,76 +63,91 @@
                     </div>
                 @endif
 
-                {{-- Tabel Items --}}
-                <section>
-                    <div class="mb-3 flex items-center justify-between">
-                        <h2 class="flex items-center gap-2 text-sm font-black uppercase tracking-tight text-slate-700">
-                            <span class="text-lg text-slate-300">◇</span>
-                            Daftar Barang (<span id="invoice-items-count">{{ $items->count() }}</span>)
-                        </h2>
-                        <button type="button" id="add-invoice-item-btn" class="rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-blue-600 shadow-sm transition-colors hover:bg-blue-50">＋ Tambah</button>
-                    </div>
-
-                    <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                        <div class="overflow-x-auto">
-                            <table class="w-full min-w-[700px] text-sm">
-                                <thead class="bg-slate-50/80">
-                                    <tr>
-                                        <th class="w-10 px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">#</th>
-                                        <th class="px-3 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Nama Barang</th>
-                                        <th class="w-20 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Satuan</th>
-                                        <th class="w-24 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Qty</th>
-                                        <th class="w-36 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Harga</th>
-                                        <th class="w-32 px-2 py-2.5 text-right text-[10px] font-bold uppercase tracking-wide text-slate-400">Subtotal</th>
-                                        <th class="w-10 px-2 py-2.5"></th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100" id="invoice-items-tbody">
-                                    @forelse ($items as $item)
-                                        @php
-                                            $itemIndex = $loop->index;
-                                            $price = old("items.$itemIndex.price", $item['price'] > 0 ? $item['price'] : '');
-                                            $qty = old("items.$itemIndex.qty", $item['qty']);
-                                            $unit = strtoupper(old("items.$itemIndex.unit", $item['unit']));
-                                            $name = old("items.$itemIndex.name", $item['name']);
-                                        @endphp
-                                        <tr class="invoice-item-row hover:bg-slate-50/50">
-                                            <td class="px-3 py-2 text-xs font-bold text-slate-400">{{ $loop->iteration }}</td>
-                                            <td class="px-3 py-2">
-                                                <input type="hidden" name="items[{{ $itemIndex }}][id]" value="{{ $item['id'] ?? '' }}">
-                                                <input type="text" name="items[{{ $itemIndex }}][name]" list="invoice-stock-items-list" autocomplete="off" value="{{ $name }}" class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10" placeholder="Ketik / pilih barang...">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input type="text" name="items[{{ $itemIndex }}][unit]" value="{{ $unit }}" class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <input name="items[{{ $itemIndex }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" class="invoice-qty w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none">
-                                            </td>
-                                            <td class="px-2 py-2">
-                                                <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
-                                                    <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                                                    <input name="items[{{ $itemIndex }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ $price }}" placeholder="0" class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
-                                                </div>
-                                            </td>
-                                            <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">0</span></td>
-                                            <td class="px-2 py-2"></td>
-                                        </tr>
-                                    @empty
-                                        <tr id="invoice-empty-state">
-                                            <td colspan="7" class="px-3 py-8 text-center text-sm font-bold text-slate-400">Tidak ada item. Klik "Tambah" untuk menambah barang.</td>
-                                        </tr>
-                                    @endforelse
-                                </tbody>
-                            </table>
+                <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
+                        <div>
+                            <h2 class="text-xs font-black uppercase tracking-wide text-slate-900">Rincian Barang</h2>
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">
+                                <span id="invoice-items-count">{{ $formItems->count() }}</span> barang siap ditagihkan
+                            </p>
                         </div>
+                        <button type="button" id="add-invoice-item-btn" class="inline-flex items-center justify-center rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-[10px] font-black uppercase tracking-wide text-blue-700 transition hover:border-blue-200 hover:bg-blue-100">
+                            Tambah Barang
+                        </button>
                     </div>
 
+                    <div class="overflow-x-auto">
+                        <table class="w-full min-w-[760px] table-fixed">
+                            <thead class="bg-slate-100 text-[9px] font-black uppercase tracking-wide text-slate-500">
+                                <tr>
+                                    <th class="w-12 px-3 py-3 text-left">No</th>
+                                    <th class="px-3 py-3 text-left">Barang</th>
+                                    <th class="w-24 px-2 py-3 text-left">Unit</th>
+                                    <th class="w-28 px-2 py-3 text-left">Qty</th>
+                                    <th class="w-36 px-2 py-3 text-left">Harga</th>
+                                    <th class="w-36 px-2 py-3 text-right">Subtotal</th>
+                                    <th class="w-12 px-2 py-3 text-center"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoice-items-tbody" class="divide-y divide-slate-100">
+                                @forelse ($formItems as $index => $item)
+                                    @php
+                                        $price = (int) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0));
+                                        $qty = (float) ($item['qty'] ?? 0);
+                                    @endphp
+                                    <tr class="invoice-item-row hover:bg-blue-50/30">
+                                        <td class="px-3 py-2 text-xs font-bold text-slate-400">{{ $loop->iteration }}</td>
+                                        <td class="px-3 py-2">
+                                            <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item['id'] ?? '' }}">
+                                            <input type="text" name="items[{{ $index }}][name]" value="{{ $item['name'] ?? '' }}" list="invoice-stock-items-list" autocomplete="off" required class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                                            @if (empty($item['id']))
+                                                <p class="mt-1 text-[9px] font-black uppercase tracking-wide text-amber-600">Barang tidak termasuk dalam PO</p>
+                                            @endif
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input type="text" name="items[{{ $index }}][unit]" value="{{ $item['unit'] ?? 'KG' }}" required class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <input name="items[{{ $index }}][qty]" type="number" min="0.01" step="0.01" value="{{ $qty }}" required class="invoice-qty w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
+                                        </td>
+                                        <td class="px-2 py-2">
+                                            <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                                <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
+                                                <input name="items[{{ $index }}][price]" type="text" inputmode="numeric" value="{{ number_format($price, 0, ',', '.') }}" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                                            </div>
+                                        </td>
+                                        <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">{{ number_format($qty * $price, 0, ',', '.') }}</span></td>
+                                        <td class="px-2 py-2 text-center">
+                                            <button type="button" class="remove-invoice-item rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                @empty
+                                    <tr id="invoice-empty-state">
+                                        <td colspan="7" class="px-4 py-8 text-center text-xs font-bold text-slate-400">Belum ada barang untuk supplier ini.</td>
+                                    </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                {{-- <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                    <button type="submit" class="w-full rounded-xl bg-slate-800 px-5 py-4 text-sm font-black uppercase tracking-[0.12em] text-white shadow-lg shadow-slate-300 transition hover:bg-blue-600">
+                        Simpan & Terbitkan Invoice
+                    </button>
+                    <button type="submit" formmethod="GET" formaction="{{ route('invoices.preview', ['id' => $order['id'], 'supplier' => $supplier['name']]) }}" class="flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-5 py-4 text-sm font-black uppercase tracking-[0.16em] text-slate-600 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                        Preview PDF
+                    </button>
+                </div> --}}
+
+                    {{-- Datalist autocomplete --}}
                     <datalist id="invoice-stock-items-list">
                         @foreach ($stockItems as $stock)
                             <option value="{{ $stock['name'] }}" data-unit="{{ $stock['unit'] ?? 'KG' }}"></option>
                         @endforeach
                     </datalist>
-                </section>
             </div>
 
             <footer class="flex items-center justify-between border-t border-slate-200 bg-white px-4 py-2.5 text-[10px] font-bold uppercase tracking-wide text-slate-400 sm:px-6">
@@ -156,6 +170,10 @@
 
             const onlyDigits = (value) => String(value).replace(/[^\d]/g, '');
             const formatNumber = (value) => new Intl.NumberFormat('id-ID').format(value);
+            const formatPriceInput = (input) => {
+                const digits = onlyDigits(input.value);
+                input.value = digits ? formatNumber(Number(digits)) : '';
+            };
 
             const stockItemsByName = {};
             @foreach ($stockItems as $stock)
@@ -163,6 +181,8 @@
             @endforeach
 
             const refreshTotals = () => {
+                if (!tbody) return;
+
                 let total = 0;
                 const rows = tbody.querySelectorAll('.invoice-item-row');
                 if (itemsCountLabel) itemsCountLabel.textContent = rows.length;
@@ -192,6 +212,7 @@
                     <td class="px-3 py-2">
                         <input type="hidden" name="items[${idx}][id]" value="">
                         <input type="text" name="items[${idx}][name]" list="invoice-stock-items-list" autocomplete="off" placeholder="Ketik / pilih barang..." required class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                        <p class="mt-1 text-[9px] font-black uppercase tracking-wide text-amber-600">Barang tidak termasuk dalam PO</p>
                     </td>
                     <td class="px-2 py-2">
                         <input type="text" name="items[${idx}][unit]" value="KG" required class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
@@ -202,7 +223,7 @@
                     <td class="px-2 py-2">
                         <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                             <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                            <input name="items[${idx}][price]" type="text" inputmode="numeric" value="0" placeholder="0" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                            <input name="items[${idx}][price]" type="text" inputmode="numeric" value="" placeholder="0" required class="invoice-price min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
                         </div>
                     </td>
                     <td class="px-2 py-2 text-right text-xs font-bold text-slate-900">Rp <span class="invoice-subtotal">0</span></td>
@@ -216,39 +237,59 @@
 
             if (addBtn) {
                 addBtn.addEventListener('click', () => {
+                    if (!tbody) return;
+
                     if (emptyState) emptyState.remove();
                     tbody.insertAdjacentHTML('beforeend', buildNewRow(itemIndex));
                     itemIndex++;
                     const newRow = tbody.lastElementChild;
                     newRow.querySelectorAll('.invoice-qty, .invoice-price').forEach(input => {
-                        input.addEventListener('input', refreshTotals);
+                        input.addEventListener('input', () => {
+                            if (input.classList.contains('invoice-price')) formatPriceInput(input);
+                            refreshTotals();
+                        });
                     });
                     refreshTotals();
                 });
             }
 
-            tbody.addEventListener('click', (e) => {
-                const removeBtn = e.target.closest('.remove-invoice-item');
-                if (removeBtn) {
-                    removeBtn.closest('.invoice-item-row').remove();
-                    refreshTotals();
-                }
-            });
-
-            tbody.addEventListener('input', (e) => {
-                if (e.target.classList.contains('invoice-item-name')) {
-                    const typed = String(e.target.value || '').trim().toUpperCase();
-                    const matchedUnit = stockItemsByName[typed];
-                    if (matchedUnit) {
-                        const row = e.target.closest('.invoice-item-row');
-                        const unitInput = row.querySelector('.item-unit-hidden');
-                        if (unitInput) unitInput.value = matchedUnit;
+            // Remove item
+            if (tbody) {
+                tbody.addEventListener('click', (e) => {
+                    const removeBtn = e.target.closest('.remove-invoice-item');
+                    if (removeBtn) {
+                        removeBtn.closest('.invoice-item-row').remove();
+                        refreshTotals();
                     }
-                }
-            });
+                });
+            }
+
+            // Autocomplete unit
+            if (tbody) {
+                tbody.addEventListener('input', (e) => {
+                    if (e.target.classList.contains('invoice-item-name')) {
+                        const typed = String(e.target.value || '').trim().toUpperCase();
+                        const matchedUnit = stockItemsByName[typed];
+                        if (matchedUnit) {
+                            const row = e.target.closest('.invoice-item-row');
+                            const unitInput = row.querySelector('.item-unit-hidden');
+                            if (unitInput) unitInput.value = matchedUnit;
+                        }
+                    }
+                });
+            }
 
             form.querySelectorAll('.invoice-qty, .invoice-price').forEach((input) => {
-                input.addEventListener('input', refreshTotals);
+                input.addEventListener('input', () => {
+                    if (input.classList.contains('invoice-price')) formatPriceInput(input);
+                    refreshTotals();
+                });
+            });
+
+            form.addEventListener('submit', () => {
+                form.querySelectorAll('.invoice-price').forEach((input) => {
+                    input.value = onlyDigits(input.value);
+                });
             });
 
             refreshTotals();

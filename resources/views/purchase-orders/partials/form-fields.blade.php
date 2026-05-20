@@ -91,8 +91,8 @@
                             <th class="w-16 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Grade</th>
                             <th class="w-24 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Qty</th>
                             <th class="w-16 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Satuan</th>
-                            <th class="w-28 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Harga</th>
                             @if (($currentUser['role'] ?? '') !== 'SPPG')
+                                <th class="w-28 px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Harga</th>
                                 <th class="px-2 py-2.5 text-left text-[10px] font-bold uppercase tracking-wide text-slate-400">Supplier</th>
                             @endif
                             <th class="w-10 px-2 py-2.5 text-center text-[10px] font-bold uppercase tracking-wide text-slate-400"></th>
@@ -127,13 +127,13 @@
                                 </td>
                                 <td class="px-2 py-2"><input name="items[{{ $itemIndex }}][qty]" type="number" min="0.01" step="0.01" value="{{ old("items.$itemIndex.qty", $item['qty'] ?? 0) }}" class="w-full min-w-[88px] rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none"></td>
                                 <td class="px-2 py-2"><input name="items[{{ $itemIndex }}][unit]" value="{{ old("items.$itemIndex.unit", strtoupper($item['unit'] ?? 'KG')) }}" class="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none"></td>
-                                <td class="px-2 py-2">
-                                    <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
-                                        <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                                        <input name="items[{{ $itemIndex }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ old("items.$itemIndex.price", $item['price'] ?? 0) }}" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
-                                    </div>
-                                </td>
                                 @if (($currentUser['role'] ?? '') !== 'SPPG')
+                                    <td class="px-2 py-2">
+                                        <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                                            <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
+                                            <input name="items[{{ $itemIndex }}][price]" type="text" inputmode="numeric" data-currency-input value="{{ old("items.$itemIndex.price", $item['price'] ?? 0) }}" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                                        </div>
+                                    </td>
                                     <td class="px-2 py-2">
                                         <select name="items[{{ $itemIndex }}][supplier]" class="w-full min-w-[120px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
                                             <option value="">—</option>
@@ -142,6 +142,8 @@
                                             @endforeach
                                         </select>
                                     </td>
+                                @else
+                                    <input type="hidden" name="items[{{ $itemIndex }}][price]" value="{{ old("items.$itemIndex.price", $item['price'] ?? 0) }}">
                                 @endif
                                 <td class="px-2 py-2 text-center">
                                     <button type="button" class="remove-item-btn rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
@@ -194,7 +196,13 @@
         }
 
         function buildNewRow(idx) {
-            const supplierCol = isSppg ? '' : `
+            const extraCols = isSppg ? '<input type="hidden" name="items['+idx+'][price]" value="0">' : `
+                <td class="px-2 py-2">
+                    <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
+                        <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
+                        <input name="items[${idx}][price]" type="text" inputmode="numeric" value="0" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                    </div>
+                </td>
                 <td class="px-2 py-2">
                     <select name="items[${idx}][supplier]" class="w-full min-w-[120px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500">
                         ${buildSupplierOptions()}
@@ -227,13 +235,7 @@
                 </td>
                 <td class="px-2 py-2"><input name="items[${idx}][qty]" type="number" min="0.01" step="0.01" value="0" class="w-full min-w-[88px] rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 outline-none"></td>
                 <td class="px-2 py-2"><input name="items[${idx}][unit]" value="KG" class="w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none"></td>
-                <td class="px-2 py-2">
-                    <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
-                        <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                        <input name="items[${idx}][price]" type="text" inputmode="numeric" value="0" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
-                    </div>
-                </td>
-                ${supplierCol}
+                ${extraCols}
                 <td class="px-2 py-2 text-center">
                     <button type="button" class="remove-item-btn rounded p-1 text-slate-300 transition-colors hover:bg-red-50 hover:text-red-500" title="Hapus">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>

@@ -201,6 +201,22 @@ class InvoiceController extends Controller
 
         $this->authorizeAdmin();
         $order = $this->findOrderModel($id);
+        $request->merge([
+            'items' => collect($request->input('items', []))
+                ->map(function (mixed $item): mixed {
+                    if (! is_array($item)) {
+                        return $item;
+                    }
+
+                    if (array_key_exists('price', $item)) {
+                        $item['price'] = (int) preg_replace('/\D+/', '', (string) $item['price']);
+                    }
+
+                    return $item;
+                })
+                ->all(),
+        ]);
+
         $validated = $request->validate([
             'supplier' => ['required', 'exists:suppliers,name'],
             'invoice_no' => ['required', 'string', 'max:80', 'unique:invoices,number'],
@@ -241,15 +257,11 @@ class InvoiceController extends Controller
                 if (! empty($itemData['id'])) {
                     $poItem = PurchaseOrderItem::query()->find($itemData['id']);
                     if ($poItem) {
-                        // Update harga di PO hanya jika masih 0 (belum ditentukan)
-                        $updateData = ['is_invoiced' => true];
-                        if ((int) $poItem->price === 0) {
-                            $updateData['price'] = $itemData['price'];
-                        }
-                        if ((float) $poItem->qty === 0.0) {
-                            $updateData['qty'] = $itemData['qty'];
-                        }
-                        $poItem->update($updateData);
+                        $poItem->update([
+                            'is_invoiced' => true,
+                            'price' => $itemData['price'],
+                            'qty' => $itemData['qty'],
+                        ]);
                     }
                 }
             }
@@ -359,6 +371,7 @@ class InvoiceController extends Controller
 
         $items = $invoice
             ? $invoice->items->map(fn ($item): array => [
+                'purchase_order_item_id' => $item->purchase_order_item_id,
                 'name' => $item->name,
                 'qty' => (float) $item->qty,
                 'unit' => $item->unit,
@@ -366,6 +379,7 @@ class InvoiceController extends Controller
             ])
             : $order->items->where('supplier.name', $supplierName)->map(function (PurchaseOrderItem $item) use ($requestItems): array {
                 $itemArray = $this->itemToArray($item);
+                $itemArray['purchase_order_item_id'] = $item->id;
 
                 $reqItem = collect($requestItems)->firstWhere('id', (string) $item->id);
                 if ($reqItem) {
@@ -374,7 +388,17 @@ class InvoiceController extends Controller
                 }
 
                 return $itemArray;
-            })->values();
+            })
+                ->concat(collect($requestItems)
+                    ->filter(fn (mixed $item): bool => is_array($item) && empty($item['id']) && ! empty($item['name']))
+                    ->map(fn (array $item): array => [
+                        'purchase_order_item_id' => null,
+                        'name' => $item['name'],
+                        'qty' => (float) ($item['qty'] ?? 0),
+                        'unit' => $item['unit'] ?? 'KG',
+                        'price' => (float) preg_replace('/\D+/', '', (string) ($item['price'] ?? 0)),
+                    ]))
+                ->values();
         $invoiceArray = $invoice ? $this->invoiceToArray($invoice) : [
             'number' => $this->invoiceNumberFor($supplierName, $order->number),
             'date' => now()->format('Y-m-d'),

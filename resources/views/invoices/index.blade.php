@@ -220,7 +220,12 @@
                                             <div class="flex flex-wrap items-center gap-1.5">
                                                 <span class="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">{{ $invoiceItems->count() }} item</span>
                                                 @foreach ($invoiceItems->take(2) as $invItem)
-                                                    <span class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">{{ $invItem['name'] }}</span>
+                                                    <span class="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700">
+                                                        {{ $invItem['name'] }}
+                                                        @if (empty($invItem['purchase_order_item_id']))
+                                                            <span class="ml-1 font-black uppercase text-amber-600">Di luar PO</span>
+                                                        @endif
+                                                    </span>
                                                 @endforeach
                                                 @if ($invoiceItems->count() > 2)
                                                     <span class="text-[10px] font-bold text-slate-400">+{{ $invoiceItems->count() - 2 }} lagi</span>
