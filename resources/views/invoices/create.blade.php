@@ -100,6 +100,9 @@
                                         <td class="px-3 py-2">
                                             <input type="hidden" name="items[{{ $index }}][id]" value="{{ $item['id'] ?? '' }}">
                                             <input type="text" name="items[{{ $index }}][name]" value="{{ $item['name'] ?? '' }}" list="invoice-stock-items-list" autocomplete="off" required class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                                            @if (empty($item['id']))
+                                                <p class="mt-1 text-[9px] font-black uppercase tracking-wide text-amber-600">Barang tidak termasuk dalam PO</p>
+                                            @endif
                                         </td>
                                         <td class="px-2 py-2">
                                             <input type="text" name="items[{{ $index }}][unit]" value="{{ $item['unit'] ?? 'KG' }}" required class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">
@@ -211,6 +214,7 @@
                     <td class="px-3 py-2">
                         <input type="hidden" name="items[${idx}][id]" value="">
                         <input type="text" name="items[${idx}][name]" list="invoice-stock-items-list" autocomplete="off" placeholder="Ketik / pilih barang..." required class="invoice-item-name w-full min-w-[160px] rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                        <p class="mt-1 text-[9px] font-black uppercase tracking-wide text-amber-600">Barang tidak termasuk dalam PO</p>
                     </td>
                     <td class="px-2 py-2">
                         <input type="text" name="items[${idx}][unit]" value="KG" required class="item-unit-hidden w-full rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5 text-xs font-semibold uppercase text-slate-800 outline-none focus:border-blue-500">

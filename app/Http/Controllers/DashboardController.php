@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\PurchaseOrderItem;
 use App\Traits\ProcurementHelpers;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Collection;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -20,14 +22,8 @@ class DashboardController extends Controller
 
         $orders = $this->visibleOrders();
         $visibleOrderIds = $this->visibleOrdersQuery()->pluck('id');
-        $invoicePaid = Invoice::query()
-            ->whereIn('purchase_order_id', $visibleOrderIds)
-            ->where('status', 'PAID')
-            ->sum('total_amount');
-        $invoiceUnpaid = Invoice::query()
-            ->whereIn('purchase_order_id', $visibleOrderIds)
-            ->where('status', 'UNPAID')
-            ->sum('total_amount');
+        $invoicePaid = $this->invoicePurchaseOrderItemsTotal($visibleOrderIds, 'PAID');
+        $invoiceUnpaid = $this->invoicePurchaseOrderItemsTotal($visibleOrderIds, 'UNPAID');
         $estimatedUnbilled = PurchaseOrderItem::query()
             ->whereIn('purchase_order_id', $visibleOrderIds)
             ->where('is_invoiced', false)
@@ -53,5 +49,18 @@ class DashboardController extends Controller
                 'paid' => $invoicePaid,
             ],
         ]);
+    }
+
+    /**
+     * @param  Collection<int, int>  $visibleOrderIds
+     */
+    private function invoicePurchaseOrderItemsTotal(Collection $visibleOrderIds, string $status): int
+    {
+        return (int) InvoiceItem::query()
+            ->whereNotNull('purchase_order_item_id')
+            ->whereHas('invoice', fn (Builder $invoice): Builder => $invoice
+                ->whereIn('purchase_order_id', $visibleOrderIds)
+                ->where('status', $status))
+            ->sum('subtotal');
     }
 }

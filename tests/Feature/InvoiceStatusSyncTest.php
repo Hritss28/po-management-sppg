@@ -94,6 +94,24 @@ test('invoice history shows item details', function (): void {
         ->assertSeeText('Rp 500.000');
 });
 
+test('invoice history marks manually added items outside purchase order', function (): void {
+    [$order, $invoice] = invoiceStatusFixture('PAID');
+
+    $invoice->items()->create([
+        'purchase_order_item_id' => null,
+        'name' => 'PLASTIK PACKING',
+        'qty' => 2,
+        'unit' => 'PCS',
+        'price' => 5000,
+        'subtotal' => 10000,
+    ]);
+
+    $this->get(route('invoices.index', ['tab' => 'history']))
+        ->assertOk()
+        ->assertSeeText('PLASTIK PACKING')
+        ->assertSeeText('Di luar PO');
+});
+
 test('invoice history can be searched and filtered', function (): void {
     [$order, $invoice] = invoiceStatusFixture('PAID');
     $invoice->items()->create([
@@ -204,6 +222,24 @@ test('creating invoice accepts formatted price input', function (): void {
 
     expect($invoice->total_amount)->toBe(1875000)
         ->and($invoice->items()->first()->price)->toBe(12500);
+});
+
+test('invoice preview marks manually added items outside purchase order', function (): void {
+    [$order, $invoice] = invoiceStatusFixture('UNPAID');
+
+    $invoice->items()->create([
+        'purchase_order_item_id' => null,
+        'name' => 'ONGKOS PACKING',
+        'qty' => 1,
+        'unit' => 'PCS',
+        'price' => 25000,
+        'subtotal' => 25000,
+    ]);
+
+    $this->get(route('invoices.preview', ['id' => $order->id, 'invoice' => $invoice->number, 'supplier' => $invoice->supplier_name]))
+        ->assertOk()
+        ->assertSeeText('ONGKOS PACKING')
+        ->assertSeeText('Barang tidak termasuk dalam PO');
 });
 
 test('invoice create shows supplier bank accounts', function (string $supplierName, array $expectedTexts): void {

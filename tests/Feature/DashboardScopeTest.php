@@ -64,3 +64,70 @@ test('sppg dashboard only counts invoices and estimates for its own orders', fun
         ->and($stats['invoice_unpaid'])->toBe(0)
         ->and($stats['unpaid'])->toBe(0);
 });
+
+test('dashboard invoice totals exclude manually added items outside purchase order', function (): void {
+    $sppg = Sppg::query()->create([
+        'code' => 'M1101',
+        'name' => 'SPPG-Balongsari',
+    ]);
+    $supplier = Supplier::query()->create(['name' => 'NUTRIVA FOODS']);
+
+    $order = PurchaseOrder::query()->create([
+        'number' => '18/PO/20052026/NF/2026',
+        'date' => '2026-05-20',
+        'created_by' => 'Admin Supplier',
+        'sppg_id' => $sppg->id,
+        'status' => 'INVOICED',
+    ]);
+    $poItem = $order->items()->create([
+        'supplier_id' => $supplier->id,
+        'name' => 'APEL',
+        'qty' => 100,
+        'unit' => 'PCS',
+        'grade' => 'A',
+        'price' => 2000,
+        'is_invoiced' => true,
+    ]);
+    $invoice = Invoice::query()->create([
+        'purchase_order_id' => $order->id,
+        'supplier_id' => $supplier->id,
+        'number' => 'INV/NUTRIVA/OUTSIDE-PO',
+        'date' => '2026-05-20',
+        'supplier_name' => $supplier->name,
+        'status' => 'UNPAID',
+        'total_amount' => 775000,
+    ]);
+    $invoice->items()->create([
+        'purchase_order_item_id' => $poItem->id,
+        'name' => 'APEL',
+        'qty' => 100,
+        'unit' => 'PCS',
+        'price' => 2000,
+        'subtotal' => 200000,
+    ]);
+    $invoice->items()->create([
+        'purchase_order_item_id' => null,
+        'name' => 'BARANG LUAR PO',
+        'qty' => 1,
+        'unit' => 'PCS',
+        'price' => 575000,
+        'subtotal' => 575000,
+    ]);
+
+    $response = $this
+        ->withSession([
+            'auth_user' => [
+                'role' => 'ADMIN',
+                'id' => 'ADMIN',
+                'name' => 'Admin Supplier',
+            ],
+        ])
+        ->get(route('dashboard'));
+
+    $response->assertOk();
+
+    $stats = $response->viewData('stats');
+
+    expect($stats['invoice_unpaid'])->toBe(200000)
+        ->and($stats['unpaid'])->toBe(200000);
+});
