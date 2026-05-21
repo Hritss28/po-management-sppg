@@ -29,8 +29,10 @@
                             <th class="w-16 px-4 py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-500">Foto</th>
                             <th class="px-6 py-4 text-left text-xs font-black uppercase tracking-[0.2em] text-slate-500">Nama Barang</th>
                             <th class="w-28 px-4 py-4 text-left text-xs font-black uppercase tracking-[0.2em] text-slate-500">Satuan</th>
-                            <th class="w-28 px-4 py-4 text-right text-xs font-black uppercase tracking-[0.2em] text-slate-500">Qty</th>
-                            <th class="w-36 px-4 py-4 text-right text-xs font-black uppercase tracking-[0.2em] text-slate-500">HET</th>
+                            @if ($currentUser['role'] === 'ADMIN')
+                                <th class="w-28 px-4 py-4 text-right text-xs font-black uppercase tracking-[0.2em] text-slate-500">Qty</th>
+                                <th class="w-36 px-4 py-4 text-right text-xs font-black uppercase tracking-[0.2em] text-slate-500">HET</th>
+                            @endif
                             <th class="w-36 px-4 py-4 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-500">Aksi</th>
                         </tr>
                     </thead>
@@ -128,12 +130,14 @@
                                     <td class="px-4 py-4">
                                         <span class="inline-flex rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase text-slate-700">{{ $item['unit'] }}</span>
                                     </td>
-                                    <td class="px-4 py-4 text-right text-sm font-bold text-slate-700">
-                                        {{ $item['qty'] > 0 ? number_format($item['qty'], 0, ',', '.') : '—' }}
-                                    </td>
-                                    <td class="px-4 py-4 text-right text-sm font-bold text-slate-700">
-                                        {{ $item['het'] > 0 ? 'Rp '.number_format($item['het'], 0, ',', '.') : '—' }}
-                                    </td>
+                                    @if ($currentUser['role'] === 'ADMIN')
+                                        <td class="px-4 py-4 text-right text-sm font-bold text-slate-700">
+                                            {{ $item['qty'] > 0 ? number_format($item['qty'], 0, ',', '.') : '—' }}
+                                        </td>
+                                        <td class="px-4 py-4 text-right text-sm font-bold text-slate-700">
+                                            {{ $item['het'] > 0 ? 'Rp '.number_format($item['het'], 0, ',', '.') : '—' }}
+                                        </td>
+                                    @endif
                                     <td class="px-4 py-4">
                                         <div class="flex items-center justify-center gap-3">
                                             @if ($currentUser['role'] === 'ADMIN')
@@ -156,7 +160,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="7" class="px-8 py-12 text-center text-sm font-bold text-slate-400">Barang tidak ditemukan.</td>
+                                <td colspan="{{ $currentUser['role'] === 'ADMIN' ? 7 : 5 }}" class="px-8 py-12 text-center text-sm font-bold text-slate-400">Barang tidak ditemukan.</td>
                             </tr>
                         @endforelse
                     </tbody>

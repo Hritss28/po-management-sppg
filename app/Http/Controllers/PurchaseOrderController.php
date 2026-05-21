@@ -146,6 +146,8 @@ class PurchaseOrderController extends Controller
             return $order;
         });
 
+        session()->forget('po_filters');
+
         return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil dibuat.');
     }
 
@@ -207,10 +209,56 @@ class PurchaseOrderController extends Controller
                 'droping_date' => $validated['droping_date'] ?? null,
                 'droping_time' => $validated['droping_time'] ?? null,
             ]);
-            $order->items()->delete();
-            $this->syncPurchaseOrderItems($order, $validated['items']);
-            $this->publishOrResplitPurchaseOrder($order->refresh());
+
+            // Hanya hapus item yang belum di-invoice agar invoice tetap utuh
+            $order->items()->where('is_invoiced', false)->delete();
+
+            // Filter: skip item dari form yang namanya sama dengan item yang sudah di-invoice
+            $invoicedNames = $order->items()->where('is_invoiced', true)->pluck('name')->map(fn ($n) => strtoupper($n))->all();
+            $newItems = collect($validated['items'])->filter(function ($item) use ($invoicedNames) {
+                $name = strtoupper($item['name'] ?? '');
+
+                return $name === '' || ! in_array($name, $invoicedNames, true);
+            })->values()->all();
+
+            $this->syncPurchaseOrderItems($order, $newItems);
+
+            // Hanya publish/resplit jika PO belum punya invoice
+            if ($order->invoices()->doesntExist()) {
+                $this->publishOrResplitPurchaseOrder($order->refresh());
+            }
+
+            // Auto-tambahkan item baru ke invoice existing untuk supplier yang sama
+            $order->refresh();
+            $newPoItems = $order->items()->where('is_invoiced', false)->with('supplier')->get();
+            foreach ($newPoItems as $poItem) {
+                if (! $poItem->supplier) {
+                    continue;
+                }
+
+                $existingInvoice = $order->invoices()
+                    ->where('supplier_name', $poItem->supplier->name)
+                    ->first();
+
+                if ($existingInvoice) {
+                    $subtotal = (int) ($poItem->qty * $poItem->price);
+                    $existingInvoice->items()->create([
+                        'purchase_order_item_id' => $poItem->id,
+                        'name' => $poItem->name,
+                        'qty' => $poItem->qty,
+                        'unit' => $poItem->unit,
+                        'price' => $poItem->price,
+                        'subtotal' => $subtotal,
+                    ]);
+                    $existingInvoice->update([
+                        'total_amount' => $existingInvoice->items()->sum('subtotal'),
+                    ]);
+                    $poItem->update(['is_invoiced' => true]);
+                }
+            }
         });
+
+        session()->forget('po_filters');
 
         return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil diperbarui.');
     }
@@ -307,6 +355,8 @@ class PurchaseOrderController extends Controller
         $this->authorizeAdmin();
         $this->findOrderModel($id)->delete();
 
+        session()->forget('po_filters');
+
         return redirect()->route('purchase-orders.index')->with('success', 'PO berhasil dihapus.');
     }
 
@@ -325,7 +375,7 @@ class PurchaseOrderController extends Controller
 
     private function isPurchaseOrderLocked(PurchaseOrder $order): bool
     {
-        return in_array($order->status, ['COMPLETED', 'INVOICED'], true);
+        return false;
     }
 
     private function redirectLockedPurchaseOrder(): RedirectResponse
