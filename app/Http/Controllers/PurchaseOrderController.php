@@ -209,9 +209,15 @@ class PurchaseOrderController extends Controller
                 'droping_date' => $validated['droping_date'] ?? null,
                 'droping_time' => $validated['droping_time'] ?? null,
             ]);
-            $order->items()->delete();
+
+            // Hanya hapus item yang belum di-invoice agar invoice tetap utuh
+            $order->items()->where('is_invoiced', false)->delete();
             $this->syncPurchaseOrderItems($order, $validated['items']);
-            $this->publishOrResplitPurchaseOrder($order->refresh());
+
+            // Hanya publish/resplit jika PO belum punya invoice
+            if ($order->invoices()->doesntExist()) {
+                $this->publishOrResplitPurchaseOrder($order->refresh());
+            }
         });
 
         session()->forget('po_filters');
