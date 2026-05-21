@@ -97,10 +97,11 @@ class InvoiceController extends Controller
         $pendingInvoices = $orders
             ->filter(fn (PurchaseOrder $order): bool => in_array($order->status, ['PROCESSING', 'COMPLETED', 'INVOICED'], true))
             ->when($filters['po_date'] !== '', fn (Collection $col) => $col->filter(fn (PurchaseOrder $order): bool => $order->date?->format('Y-m-d') === $filters['po_date']))
-            ->when($filters['drop_date'] !== '', fn (Collection $col) => $col->filter(fn (PurchaseOrder $order): bool => $order->droping_date?->format('Y-m-d') === $filters['drop_date']))
-            ->flatMap(function (PurchaseOrder $order) use ($publishedKeys): array {
+            ->when($filters['sppg'] !== '', fn (Collection $col) => $col->filter(fn (PurchaseOrder $order): bool => $order->sppg?->code === $filters['sppg']))
+            ->flatMap(function (PurchaseOrder $order) use ($publishedKeys, $filters): array {
                 return $order->items
                     ->filter(fn (PurchaseOrderItem $item): bool => ! $item->is_invoiced)
+                    ->when($filters['supplier'] !== '', fn (Collection $col) => $col->filter(fn (PurchaseOrderItem $item): bool => ($item->supplier?->name ?? '-') === $filters['supplier']))
                     ->groupBy(fn (PurchaseOrderItem $item): string => $item->supplier?->name ?? '-')
                     ->reject(fn (Collection $items, string $supplier): bool => in_array($order->id.'|'.$supplier, $publishedKeys, true))
                     ->map(fn (Collection $items, string $supplier): array => [

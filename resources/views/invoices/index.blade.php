@@ -44,35 +44,42 @@
 
         @if ($activeTab === 'pending')
             {{-- Filter Pending --}}
-            <form method="GET" action="{{ route('invoices.index') }}" class="mb-4 space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <form method="GET" action="{{ route('invoices.index') }}" class="mb-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                 <input type="hidden" name="tab" value="pending">
-                <div class="space-y-3">
-                    <div class="flex flex-col justify-between gap-1 sm:flex-row sm:items-end">
-                        <div>
-                            <h2 class="text-sm font-black tracking-tight text-slate-950">Filter Siap Rekap Tagihan</h2>
-                            <p class="mt-0.5 text-xs font-medium text-slate-500">Filter data berdasarkan tanggal PO dan tanggal Dropping.</p>
-                        </div>
+                <div class="grid grid-cols-1 gap-3 md:grid-cols-4 items-end">
+                    {{-- Tanggal --}}
+                    <div class="space-y-1.5">
+                        <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 block">Tanggal</span>
+                        <input type="date" name="po_date" value="{{ $filters['po_date'] ?? '' }}" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white" onchange="this.form.submit()">
                     </div>
 
-                    <div class="grid grid-cols-1 gap-4 md:grid-cols-3 items-end">
-                        {{-- Tanggal PO --}}
-                        <div class="space-y-1.5">
-                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 block">Tanggal PO</span>
-                            <input type="date" name="po_date" value="{{ $filters['po_date'] ?? '' }}" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white" onchange="this.form.submit()">
-                        </div>
+                    {{-- SPPG --}}
+                    <div class="space-y-1.5">
+                        <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 block">SPPG</span>
+                        <select name="sppg" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white" onchange="this.form.submit()">
+                            <option value="">Semua SPPG</option>
+                            @foreach ($sppgs as $sppg)
+                                <option value="{{ $sppg->code }}" @selected(($filters['sppg'] ?? '') === $sppg->code)>{{ $sppg->code }} — {{ $sppg->name }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        {{-- Tanggal Dropping --}}
-                        <div class="space-y-1.5">
-                            <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 block">Tanggal Dropping</span>
-                            <input type="date" name="drop_date" value="{{ $filters['drop_date'] ?? '' }}" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white" onchange="this.form.submit()">
-                        </div>
+                    {{-- Supplier --}}
+                    <div class="space-y-1.5">
+                        <span class="text-[9px] font-black uppercase tracking-[0.18em] text-slate-400 block">Supplier</span>
+                        <select name="supplier" class="h-10 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 text-xs font-bold text-slate-600 outline-none transition focus:border-blue-500 focus:bg-white" onchange="this.form.submit()">
+                            <option value="">Semua Supplier</option>
+                            @foreach ($suppliers as $supplier)
+                                <option value="{{ $supplier }}" @selected(($filters['supplier'] ?? '') === $supplier)>{{ $supplier }}</option>
+                            @endforeach
+                        </select>
+                    </div>
 
-                        <div class="flex gap-2">
-                            <button type="submit" class="h-10 flex-1 rounded-lg bg-blue-600 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">Filter</button>
-                            @if(!empty($filters['po_date']) || !empty($filters['drop_date']))
-                                <a href="{{ route('invoices.index', ['tab' => 'pending', 'clear' => 1]) }}" class="flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-xs font-black uppercase tracking-wide text-slate-500 transition hover:bg-slate-50" title="Reset">✕</a>
-                            @endif
-                        </div>
+                    <div class="flex gap-2">
+                        <button type="submit" class="h-10 flex-1 rounded-lg bg-blue-600 px-5 text-xs font-black uppercase tracking-wide text-white shadow-sm shadow-blue-600/20 transition hover:bg-blue-700">Filter</button>
+                        @if(!empty($filters['po_date']) || !empty($filters['sppg']) || !empty($filters['supplier']))
+                            <a href="{{ route('invoices.index', ['tab' => 'pending', 'clear' => 1]) }}" class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-xs font-black text-slate-500 transition hover:bg-slate-50" title="Reset">✕</a>
+                        @endif
                     </div>
                 </div>
             </form>

@@ -198,50 +198,84 @@ class PurchaseOrderController extends Controller
                 'droping_time' => $validated['droping_time'] ?? null,
             ]);
 
-            // Hanya hapus item yang belum di-invoice agar invoice tetap utuh
+            // Identifikasi item yang dihapus user dari form
+            $submittedNames = collect($validated['items'])
+                ->pluck('name')
+                ->filter()
+                ->map(fn ($n) => strtoupper($n))
+                ->all();
+
+            // Hapus item invoiced yang tidak ada di form (user sengaja hapus)
+            $invoicedItemsToRemove = $order->items()
+                ->where('is_invoiced', true)
+                ->get()
+                ->filter(fn ($item) => ! in_array(strtoupper($item->name), $submittedNames, true));
+
+            foreach ($invoicedItemsToRemove as $removedItem) {
+                // Hapus dari invoice items juga
+                \App\Models\InvoiceItem::where('purchase_order_item_id', $removedItem->id)->delete();
+                $removedItem->delete();
+            }
+
+            // Update total invoice setelah item dihapus
+            foreach ($order->invoices as $invoice) {
+                $invoice->update(['total_amount' => $invoice->items()->sum('subtotal')]);
+            }
+
+            // Hapus item yang belum di-invoice
             $order->items()->where('is_invoiced', false)->delete();
 
-            // Filter: skip item dari form yang namanya sama dengan item yang sudah di-invoice
+            // Buat ulang dari form — skip item yang namanya sama dengan yang masih invoiced
             $invoicedNames = $order->items()->where('is_invoiced', true)->pluck('name')->map(fn ($n) => strtoupper($n))->all();
             $newItems = collect($validated['items'])->filter(function ($item) use ($invoicedNames) {
                 $name = strtoupper($item['name'] ?? '');
+                // Skip jika nama kosong DAN tidak ada stock_item_id (baris benar-benar kosong)
+                if ($name === '' && empty($item['stock_item_id'])) {
+                    return false;
+                }
+                // Skip jika nama sama dengan item yang sudah invoiced
+                if ($name !== '' && in_array($name, $invoicedNames, true)) {
+                    return false;
+                }
 
-                return $name === '' || ! in_array($name, $invoicedNames, true);
+                return true;
             })->values()->all();
 
             $this->syncPurchaseOrderItems($order, $newItems);
 
-            // Hanya publish/resplit jika PO belum punya invoice
+            // Publish/resplit hanya untuk PO draft (belum punya invoice dan belum punya nomor tetap)
             if ($order->invoices()->doesntExist()) {
                 $this->publishOrResplitPurchaseOrder($order->refresh());
             }
 
             // Auto-tambahkan item baru ke invoice existing untuk supplier yang sama
-            $order->refresh();
-            $newPoItems = $order->items()->where('is_invoiced', false)->with('supplier')->get();
-            foreach ($newPoItems as $poItem) {
-                if (! $poItem->supplier) {
-                    continue;
-                }
+            if ($order->invoices()->exists()) {
+                $order->refresh();
+                $newPoItems = $order->items()->where('is_invoiced', false)->with('supplier')->get();
+                foreach ($newPoItems as $poItem) {
+                    if (! $poItem->supplier) {
+                        continue;
+                    }
 
-                $existingInvoice = $order->invoices()
-                    ->where('supplier_name', $poItem->supplier->name)
-                    ->first();
+                    $existingInvoice = $order->invoices()
+                        ->where('supplier_name', $poItem->supplier->name)
+                        ->first();
 
-                if ($existingInvoice) {
-                    $subtotal = (int) ($poItem->qty * $poItem->price);
-                    $existingInvoice->items()->create([
-                        'purchase_order_item_id' => $poItem->id,
-                        'name' => $poItem->name,
-                        'qty' => $poItem->qty,
-                        'unit' => $poItem->unit,
-                        'price' => $poItem->price,
-                        'subtotal' => $subtotal,
-                    ]);
-                    $existingInvoice->update([
-                        'total_amount' => $existingInvoice->items()->sum('subtotal'),
-                    ]);
-                    $poItem->update(['is_invoiced' => true]);
+                    if ($existingInvoice) {
+                        $subtotal = (int) ($poItem->qty * $poItem->price);
+                        $existingInvoice->items()->create([
+                            'purchase_order_item_id' => $poItem->id,
+                            'name' => $poItem->name,
+                            'qty' => $poItem->qty,
+                            'unit' => $poItem->unit,
+                            'price' => $poItem->price,
+                            'subtotal' => $subtotal,
+                        ]);
+                        $existingInvoice->update([
+                            'total_amount' => $existingInvoice->items()->sum('subtotal'),
+                        ]);
+                        $poItem->update(['is_invoiced' => true]);
+                    }
                 }
             }
         });
