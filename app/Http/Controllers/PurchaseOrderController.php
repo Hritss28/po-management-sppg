@@ -212,7 +212,16 @@ class PurchaseOrderController extends Controller
 
             // Hanya hapus item yang belum di-invoice agar invoice tetap utuh
             $order->items()->where('is_invoiced', false)->delete();
-            $this->syncPurchaseOrderItems($order, $validated['items']);
+
+            // Filter: skip item dari form yang namanya sama dengan item yang sudah di-invoice
+            $invoicedNames = $order->items()->where('is_invoiced', true)->pluck('name')->map(fn ($n) => strtoupper($n))->all();
+            $newItems = collect($validated['items'])->filter(function ($item) use ($invoicedNames) {
+                $name = strtoupper($item['name'] ?? '');
+
+                return $name === '' || ! in_array($name, $invoicedNames, true);
+            })->values()->all();
+
+            $this->syncPurchaseOrderItems($order, $newItems);
 
             // Hanya publish/resplit jika PO belum punya invoice
             if ($order->invoices()->doesntExist()) {
