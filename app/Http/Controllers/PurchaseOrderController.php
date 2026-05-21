@@ -123,7 +123,7 @@ class PurchaseOrderController extends Controller
                 'date' => $validated['date'],
                 'created_by' => $validated['created_by'],
                 'sppg_id' => $sppg->id,
-                'droping_date' => $validated['droping_date'] ?? null,
+                'droping_date' => $validated['date'],
                 'droping_time' => $validated['droping_time'] ?? null,
                 'status' => 'VALID',
             ]);
@@ -194,7 +194,7 @@ class PurchaseOrderController extends Controller
                 'date' => $validated['date'],
                 'created_by' => $validated['created_by'],
                 'sppg_id' => $sppg->id,
-                'droping_date' => $validated['droping_date'] ?? null,
+                'droping_date' => $validated['date'],
                 'droping_time' => $validated['droping_time'] ?? null,
             ]);
 
