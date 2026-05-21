@@ -94,25 +94,6 @@
                     @endif
                 </div>
             </div>
-            <div class="flex items-end gap-2">
-                <label class="block">
-                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl PO Dari</span>
-                    <input name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
-                </label>
-                <label class="block">
-                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
-                    <input name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
-                </label>
-                <label class="block">
-                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl Drop Dari</span>
-                    <input name="drop_from" type="date" value="{{ $filters['drop_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
-                </label>
-                <label class="block">
-                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
-                    <input name="drop_to" type="date" value="{{ $filters['drop_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
-                </label>
-                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">Filter</button>
-            </div>
         </form>
 
         <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
