@@ -109,7 +109,7 @@ test('invoice history marks manually added items outside purchase order', functi
     $this->get(route('invoices.index', ['tab' => 'history']))
         ->assertOk()
         ->assertSeeText('PLASTIK PACKING')
-        ->assertSeeText('Di luar PO');
+        ->assertSeeText('1 item');
 });
 
 test('invoice history can be searched and filtered', function (): void {

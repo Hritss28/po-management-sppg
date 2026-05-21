@@ -81,6 +81,8 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'qty' => ['nullable', 'numeric', 'min:0'],
+            'het' => ['nullable', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -92,6 +94,8 @@ class StockItemController extends Controller
         StockItem::query()->create([
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
+            'qty' => $validated['qty'] ?? 0,
+            'het' => $validated['het'] ?? 0,
             'category' => 'Operasional',
             'image' => $imagePath,
             'status' => 'Aktif',
@@ -133,6 +137,8 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'qty' => ['nullable', 'numeric', 'min:0'],
+            'het' => ['nullable', 'numeric', 'min:0'],
             'image' => ['nullable', 'image', 'max:2048'],
         ]);
 
@@ -140,6 +146,8 @@ class StockItemController extends Controller
         $updateData = [
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
+            'qty' => $validated['qty'] ?? $item->qty,
+            'het' => $validated['het'] ?? $item->het,
         ];
 
         if ($request->hasFile('image') && $request->file('image')->isValid()) {

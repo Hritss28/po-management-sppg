@@ -346,6 +346,8 @@ trait ProcurementHelpers
             'unit' => $item->unit,
             'category' => $item->category,
             'image' => $item->image,
+            'qty' => (float) $item->qty,
+            'het' => (int) $item->het,
             'status' => $item->status,
         ];
     }
