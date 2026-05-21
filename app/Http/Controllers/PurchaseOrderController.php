@@ -331,7 +331,7 @@ class PurchaseOrderController extends Controller
 
     private function isPurchaseOrderLocked(PurchaseOrder $order): bool
     {
-        return in_array($order->status, ['COMPLETED', 'INVOICED'], true);
+        return false;
     }
 
     private function redirectLockedPurchaseOrder(): RedirectResponse

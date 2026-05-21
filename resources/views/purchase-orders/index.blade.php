@@ -225,13 +225,11 @@
                                 <td class="px-3 py-2.5">
                                     <div class="flex justify-end gap-1.5">
                                         @if ($currentUser['role'] === 'ADMIN')
-                                            @if (! $isLocked)
                                                 <a href="{{ route('purchase-orders.edit', $order['id']) }}" title="Edit PO" class="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
                                                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.651-1.651a2.121 2.121 0 013 3L7.5 19.849 3 21l1.151-4.5L16.862 4.487z" />
                                                     </svg>
                                                 </a>
-                                            @endif
                                             <form method="POST" action="{{ route('purchase-orders.destroy', $order['id']) }}">
                                                 @csrf
                                                 @method('DELETE')
