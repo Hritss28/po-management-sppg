@@ -94,6 +94,25 @@
                     @endif
                 </div>
             </div>
+            <div class="flex items-end gap-2">
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl PO Dari</span>
+                    <input name="date_from" type="date" value="{{ $filters['date_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
+                    <input name="date_to" type="date" value="{{ $filters['date_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Tgl Drop Dari</span>
+                    <input name="drop_from" type="date" value="{{ $filters['drop_from'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <label class="block">
+                    <span class="mb-1 block text-[9px] font-bold uppercase tracking-wide text-slate-400">Sampai</span>
+                    <input name="drop_to" type="date" value="{{ $filters['drop_to'] ?? '' }}" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-700 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                </label>
+                <button type="submit" class="rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-blue-700">Filter</button>
+            </div>
         </form>
 
         <section class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/70">
@@ -116,11 +135,9 @@
                         @forelse ($orders as $order)
                             @php
                                 $total           = collect($order['items'])->sum(fn ($item) => $item['qty'] * $item['price']);
-                                $firstItem       = $order['items'][0];
+                                $firstItem       = $order['items'][0] ?? null;
                                 $remaining       = max(0, count($order['items']) - 1);
-                                // Kolom NO = urutan tampil di list (1, 2, 3...)
                                 $sequence        = ($orders->firstItem() ?? 1) + $loop->index;
-                                // Hitung status supplier semua item
                                 $allItems        = collect($order['items']);
                                 $hasAnySupplier  = $allItems->contains(fn ($i) => $i['supplier'] !== '-' && $i['supplier'] !== null);
                                 $allHaveSupplier = $allItems->every(fn ($i) => $i['supplier'] !== '-' && $i['supplier'] !== null);
@@ -140,20 +157,24 @@
                                     </div>
                                 </td>
                                 <td class="px-3 py-2.5">
-                                    <p class="max-w-56 truncate text-xs font-black uppercase text-slate-900">
-                                        {{ $firstItem['name'] }}
-                                        @if ($remaining > 0)
-                                            <span class="text-blue-600">+{{ $remaining }} lainnya</span>
+                                    @if ($firstItem)
+                                        <p class="max-w-56 truncate text-xs font-black uppercase text-slate-900">
+                                            {{ $firstItem['name'] }}
+                                            @if ($remaining > 0)
+                                                <span class="text-blue-600">+{{ $remaining }} lainnya</span>
+                                            @endif
+                                        </p>
+                                        @if (! empty($firstItem['request']))
+                                            <p class="mt-1 text-[10px] font-bold italic text-slate-400">"{{ $firstItem['request'] }}"</p>
                                         @endif
-                                    </p>
-                                    @if (! empty($firstItem['request']))
-                                        <p class="mt-1 text-[10px] font-bold italic text-slate-400">"{{ $firstItem['request'] }}"</p>
+                                    @else
+                                        <p class="text-xs italic text-slate-400">Belum ada item</p>
                                     @endif
                                     {{-- Status supplier --}}
                                     @if ($allHaveSupplier)
                                         <p class="mt-1 text-[9px] font-black uppercase text-emerald-600">
                                             Supplier OK
-                                            <span class="ml-1 text-blue-600">{{ $firstItem['supplier'] }}</span>
+                                            <span class="ml-1 text-blue-600">{{ $firstItem['supplier'] ?? '' }}</span>
                                         </p>
                                     @elseif ($hasAnySupplier)
                                         <p class="mt-1 text-[9px] font-black uppercase text-orange-500">Partial Supplier</p>
@@ -162,7 +183,7 @@
                                     @endif
                                 </td>
                                 <td class="px-3 py-2.5 text-xs font-black text-slate-900">
-                                    {{ collect($order['items'])->sum('qty') }} <span class="text-[10px] uppercase text-slate-400">{{ $firstItem['unit'] }}</span>
+                                    {{ collect($order['items'])->sum('qty') }} <span class="text-[10px] uppercase text-slate-400">{{ $firstItem['unit'] ?? '' }}</span>
                                 </td>
                                 <td class="px-3 py-2.5">
                                     <span class="inline-flex max-w-40 rounded border border-slate-200 bg-slate-100 px-2.5 py-1 text-[10px] font-black uppercase text-slate-700">{{ $order['sppg'] }}</span>

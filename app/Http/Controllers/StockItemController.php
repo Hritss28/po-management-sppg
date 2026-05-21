@@ -81,11 +81,23 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'qty' => ['nullable', 'numeric', 'min:0'],
+            'het' => ['nullable', 'numeric', 'min:0'],
+            'image' => ['nullable', 'image', 'max:2048'],
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $imagePath = $request->file('image')->store('stock-items', 'public');
+        }
+
         StockItem::query()->create([
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
+            'qty' => $validated['qty'] ?? 0,
+            'het' => $validated['het'] ?? 0,
             'category' => 'Operasional',
+            'image' => $imagePath,
             'status' => 'Aktif',
         ]);
 
@@ -125,11 +137,24 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'qty' => ['nullable', 'numeric', 'min:0'],
+            'het' => ['nullable', 'numeric', 'min:0'],
+            'image' => ['nullable', 'image', 'max:2048'],
         ]);
-        StockItem::query()->findOrFail($id)->update([
+
+        $item = StockItem::query()->findOrFail($id);
+        $updateData = [
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
-        ]);
+            'qty' => $validated['qty'] ?? $item->qty,
+            'het' => $validated['het'] ?? $item->het,
+        ];
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $updateData['image'] = $request->file('image')->store('stock-items', 'public');
+        }
+
+        $item->update($updateData);
 
         return redirect()->route('master-stok.index')->with('success', 'Barang berhasil diperbarui.');
     }

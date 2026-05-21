@@ -38,6 +38,8 @@ Route::get('/surat-jalan/{id}', [DeliveryNoteController::class, 'show'])->name('
 Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
 Route::get('/invoices/{id}/create', [InvoiceController::class, 'create'])->name('invoices.create');
 Route::post('/invoices/{id}', [InvoiceController::class, 'store'])->name('invoices.store');
+Route::get('/invoices/{id}/edit', [InvoiceController::class, 'edit'])->name('invoices.edit');
+Route::patch('/invoices/{id}/update-items', [InvoiceController::class, 'updateItems'])->name('invoices.update-items');
 Route::post('/invoices/{id}/add-item', [InvoiceController::class, 'addItem'])->name('invoices.add-item');
 Route::patch('/invoices/{id}/status', [InvoiceController::class, 'updateStatus'])->name('invoices.status.update');
 Route::get('/invoices/{id}/preview', [InvoiceController::class, 'preview'])->name('invoices.preview');

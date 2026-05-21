@@ -91,7 +91,10 @@ class InvoiceController extends Controller
             'date_filter' => ['nullable', 'in:all,today,range'],
             'date_from' => ['nullable', 'date'],
             'date_to' => ['nullable', 'date'],
-            'invoice_date' => ['nullable', 'date'],
+            'po_date_from' => ['nullable', 'date'],
+            'po_date_to' => ['nullable', 'date'],
+            'drop_from' => ['nullable', 'date'],
+            'drop_to' => ['nullable', 'date'],
         ]);
 
         $filters = [
@@ -102,9 +105,10 @@ class InvoiceController extends Controller
             'date_filter' => $filters['date_filter'] ?? 'all',
             'date_from' => $filters['date_from'] ?? '',
             'date_to' => $filters['date_to'] ?? '',
-            'invoice_date' => $filters['invoice_date'] ?? $request->string('invoice_date')->toString(),
-            'po_date' => $poDate,
-            'drop_date' => $dropDate,
+            'po_date_from' => $filters['po_date_from'] ?? '',
+            'po_date_to' => $filters['po_date_to'] ?? '',
+            'drop_from' => $filters['drop_from'] ?? '',
+            'drop_to' => $filters['drop_to'] ?? '',
         ];
 
         if (($filters['date_from'] !== '' || $filters['date_to'] !== '') && $filters['date_filter'] !== 'today') {
@@ -217,6 +221,24 @@ class InvoiceController extends Controller
             if ($filters['date_to'] !== '') {
                 $query->whereDate('date', '<=', $filters['date_to']);
             }
+        }
+
+        // Filter berdasarkan tanggal PO
+        if ($filters['po_date_from'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('date', '>=', $filters['po_date_from']));
+        }
+
+        if ($filters['po_date_to'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('date', '<=', $filters['po_date_to']));
+        }
+
+        // Filter berdasarkan tanggal dropping
+        if ($filters['drop_from'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('droping_date', '>=', $filters['drop_from']));
+        }
+
+        if ($filters['drop_to'] !== '') {
+            $query->whereHas('purchaseOrder', fn (Builder $po): Builder => $po->whereDate('droping_date', '<=', $filters['drop_to']));
         }
     }
 
@@ -346,6 +368,87 @@ class InvoiceController extends Controller
             'currentUser' => $this->currentUser(),
             'order' => $this->findOrderArray($id),
         ]);
+    }
+
+    public function edit(Request $request, string $id): View|RedirectResponse
+    {
+        if ($redirect = $this->requireAuth()) {
+            return $redirect;
+        }
+
+        $this->authorizeAdmin();
+        $order = $this->findOrderModel($id);
+        $invoiceNumber = $request->string('invoice')->toString();
+        $invoice = Invoice::query()
+            ->with('items')
+            ->where('purchase_order_id', $order->id)
+            ->where('number', $invoiceNumber)
+            ->firstOrFail();
+
+        $supplierName = $invoice->supplier_name;
+
+        return view('invoices.edit', [
+            'currentUser' => $this->currentUser(),
+            'order' => $this->orderToArray($order),
+            'invoice' => $invoice,
+            'items' => $invoice->items->map(fn ($item): array => [
+                'id' => (string) $item->id,
+                'name' => $item->name,
+                'unit' => $item->unit,
+                'qty' => (float) $item->qty,
+                'price' => $item->price,
+            ]),
+            'stockItems' => $this->stockItems(),
+            'supplier' => $this->supplierDetails($supplierName),
+        ]);
+    }
+
+    public function updateItems(Request $request, string $id): RedirectResponse
+    {
+        if ($redirect = $this->requireAuth()) {
+            return $redirect;
+        }
+
+        $this->authorizeAdmin();
+        $order = $this->findOrderModel($id);
+
+        $validated = $request->validate([
+            'invoice_number' => ['required', 'string', 'exists:invoices,number'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.id' => ['nullable', 'integer'],
+            'items.*.name' => ['required', 'string', 'max:120'],
+            'items.*.unit' => ['required', 'string', 'max:20'],
+            'items.*.qty' => ['required', 'numeric', 'min:0.01'],
+            'items.*.price' => ['required', 'numeric', 'min:1'],
+        ]);
+
+        $invoice = Invoice::query()
+            ->where('purchase_order_id', $order->id)
+            ->where('number', $validated['invoice_number'])
+            ->firstOrFail();
+
+        DB::transaction(function () use ($invoice, $validated): void {
+            // Hapus item lama dan buat ulang
+            $invoice->items()->delete();
+
+            $total = 0;
+            foreach ($validated['items'] as $itemData) {
+                $subtotal = (int) ($itemData['qty'] * $itemData['price']);
+                $total += $subtotal;
+                $invoice->items()->create([
+                    'purchase_order_item_id' => null,
+                    'name' => $itemData['name'],
+                    'qty' => $itemData['qty'],
+                    'unit' => $itemData['unit'],
+                    'price' => $itemData['price'],
+                    'subtotal' => $subtotal,
+                ]);
+            }
+
+            $invoice->update(['total_amount' => $total]);
+        });
+
+        return redirect()->route('invoices.index', ['tab' => 'history'])->with('success', 'Invoice berhasil diperbarui.');
     }
 
     public function addItem(Request $request, string $id): RedirectResponse

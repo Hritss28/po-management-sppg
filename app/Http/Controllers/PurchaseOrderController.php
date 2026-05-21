@@ -48,8 +48,10 @@ class PurchaseOrderController extends Controller
         $query = $this->visibleOrdersQuery();
         $search = strtolower($request->string('search')->toString());
         $status = $request->string('status')->toString();
-        $poDate = $request->string('po_date')->toString();
-        $dropDate = $request->string('drop_date')->toString();
+        $dateFrom = $request->string('date_from')->toString();
+        $dateTo = $request->string('date_to')->toString();
+        $dropFrom = $request->string('drop_from')->toString();
+        $dropTo = $request->string('drop_to')->toString();
 
         if ($search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -65,12 +67,20 @@ class PurchaseOrderController extends Controller
             $query->where('status', $status);
         }
 
-        if ($poDate !== '') {
-            $query->whereDate('date', $poDate);
+        if ($dateFrom !== '') {
+            $query->whereDate('date', '>=', $dateFrom);
         }
 
-        if ($dropDate !== '') {
-            $query->whereDate('droping_date', $dropDate);
+        if ($dateTo !== '') {
+            $query->whereDate('date', '<=', $dateTo);
+        }
+
+        if ($dropFrom !== '') {
+            $query->whereDate('droping_date', '>=', $dropFrom);
+        }
+
+        if ($dropTo !== '') {
+            $query->whereDate('droping_date', '<=', $dropTo);
         }
 
         $orders = $query
@@ -86,8 +96,10 @@ class PurchaseOrderController extends Controller
             'filters' => [
                 'search' => $request->string('search')->toString(),
                 'status' => $status ?: 'ALL',
-                'po_date' => $poDate,
-                'drop_date' => $dropDate,
+                'date_from' => $dateFrom,
+                'date_to' => $dateTo,
+                'drop_from' => $dropFrom,
+                'drop_to' => $dropTo,
             ],
         ]);
     }
