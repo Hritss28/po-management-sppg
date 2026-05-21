@@ -66,18 +66,7 @@ class InvoiceController extends Controller
             }
         }
 
-        $poDate = $request->string('po_date')->toString();
-        $dropDate = $request->string('drop_date')->toString();
-
         $ordersQuery = $this->visibleOrdersQuery();
-
-        if ($poDate !== '') {
-            $ordersQuery->whereDate('date', $poDate);
-        }
-
-        if ($dropDate !== '') {
-            $ordersQuery->whereDate('droping_date', $dropDate);
-        }
 
         $orders = $ordersQuery->latest('id')->get();
         $visibleOrderIds = $orders->pluck('id');
