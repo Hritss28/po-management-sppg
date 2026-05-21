@@ -56,11 +56,19 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'image' => ['nullable', 'image', 'max:2048'],
         ]);
+
+        $imagePath = null;
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $imagePath = $request->file('image')->store('stock-items', 'public');
+        }
+
         StockItem::query()->create([
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
             'category' => 'Operasional',
+            'image' => $imagePath,
             'status' => 'Aktif',
         ]);
 
@@ -100,11 +108,20 @@ class StockItemController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:120'],
             'unit' => ['required', 'string', 'max:20'],
+            'image' => ['nullable', 'image', 'max:2048'],
         ]);
-        StockItem::query()->findOrFail($id)->update([
+
+        $item = StockItem::query()->findOrFail($id);
+        $updateData = [
             'name' => strtoupper($validated['name']),
             'unit' => strtoupper($validated['unit']),
-        ]);
+        ];
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            $updateData['image'] = $request->file('image')->store('stock-items', 'public');
+        }
+
+        $item->update($updateData);
 
         return redirect()->route('master-stok.index')->with('success', 'Barang berhasil diperbarui.');
     }

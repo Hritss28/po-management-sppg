@@ -345,6 +345,7 @@ trait ProcurementHelpers
             'name' => $item->name,
             'unit' => $item->unit,
             'category' => $item->category,
+            'image' => $item->image,
             'status' => $item->status,
         ];
     }

@@ -268,9 +268,16 @@
                                         @endif
                                     </td>
                                     <td class="px-3 py-3 text-right">
-                                        <a href="{{ route('invoices.preview', ['id' => $entry['order']['id'], 'invoice' => $invoice['number'], 'supplier' => $invoice['supplier']]) }}" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
-                                            Cetak
-                                        </a>
+                                        <div class="flex items-center justify-end gap-1.5">
+                                            @if ($currentUser['role'] === 'ADMIN')
+                                                <button type="button" onclick="openAddItemModal('{{ $entry['order']['id'] }}', '{{ $invoice['number'] }}', '{{ $invoice['supplier'] }}')" class="inline-flex items-center rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-100" title="Tambah Barang">
+                                                    ＋
+                                                </button>
+                                            @endif
+                                            <a href="{{ route('invoices.preview', ['id' => $entry['order']['id'], 'invoice' => $invoice['number'], 'supplier' => $invoice['supplier']]) }}" class="inline-flex items-center rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-slate-700 shadow-sm transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600">
+                                                Cetak
+                                            </a>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -289,4 +296,76 @@
             </section>
         @endif
     </section>
+
+    {{-- Modal Tambah Barang ke Invoice --}}
+    @if ($currentUser['role'] === 'ADMIN')
+        <div id="add-item-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
+            <div class="w-full max-w-md rounded-xl bg-white shadow-2xl">
+                <form id="add-item-form" method="POST" action="">
+                    @csrf
+                    <input type="hidden" name="invoice_number" id="modal-invoice-number">
+
+                    <header class="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+                        <div>
+                            <h3 class="text-base font-black text-slate-950">Tambah Barang</h3>
+                            <p class="mt-0.5 text-xs font-semibold text-slate-500" id="modal-invoice-label"></p>
+                        </div>
+                        <button type="button" onclick="closeAddItemModal()" class="text-2xl leading-none text-slate-400 hover:text-slate-700">&times;</button>
+                    </header>
+
+                    <div class="space-y-4 px-5 py-5">
+                        <label class="block">
+                            <span class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Nama Barang</span>
+                            <input type="text" name="name" required placeholder="Contoh: AYAM FILET" class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                        </label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <label class="block">
+                                <span class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Qty</span>
+                                <input type="number" name="qty" min="0.01" step="0.01" value="1" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Satuan</span>
+                                <input type="text" name="unit" value="KG" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold uppercase text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                            </label>
+                            <label class="block">
+                                <span class="mb-1 block text-[10px] font-bold uppercase tracking-wide text-slate-500">Harga</span>
+                                <input type="number" name="price" min="1" value="0" required class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-800 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10">
+                            </label>
+                        </div>
+                    </div>
+
+                    <footer class="flex items-center justify-end gap-3 border-t border-slate-200 px-5 py-4">
+                        <button type="button" onclick="closeAddItemModal()" class="rounded-lg px-4 py-2 text-sm font-bold text-slate-500 hover:text-slate-700">Batal</button>
+                        <button type="submit" class="rounded-lg bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-sm shadow-blue-600/20 hover:bg-blue-700">Simpan</button>
+                    </footer>
+                </form>
+            </div>
+        </div>
+
+        <script>
+            function openAddItemModal(orderId, invoiceNumber, supplierName) {
+                const modal = document.getElementById('add-item-modal');
+                const form = document.getElementById('add-item-form');
+                const label = document.getElementById('modal-invoice-label');
+                const invoiceInput = document.getElementById('modal-invoice-number');
+
+                form.action = '/invoices/' + orderId + '/add-item';
+                invoiceInput.value = invoiceNumber;
+                label.textContent = invoiceNumber + ' — ' + supplierName;
+
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+
+            function closeAddItemModal() {
+                const modal = document.getElementById('add-item-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+
+            document.getElementById('add-item-modal')?.addEventListener('click', function(e) {
+                if (e.target === this) closeAddItemModal();
+            });
+        </script>
+    @endif
 @endsection

@@ -26,6 +26,7 @@
                     <thead class="bg-slate-50">
                         <tr>
                             <th class="w-24 px-8 py-5 text-left text-xs font-black uppercase tracking-[0.2em] text-slate-500">No</th>
+                            <th class="w-16 px-4 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-500">Foto</th>
                             <th class="px-8 py-5 text-left text-xs font-black uppercase tracking-[0.2em] text-slate-500">Nama Barang</th>
                             <th class="w-56 px-8 py-5 text-left text-xs font-black uppercase tracking-[0.2em] text-slate-500">Satuan</th>
                             <th class="w-40 px-8 py-5 text-center text-xs font-black uppercase tracking-[0.2em] text-slate-500">Aksi</th>
@@ -34,9 +35,15 @@
                     <tbody class="divide-y divide-slate-100">
                         @if ($isCreating && $currentUser['role'] === 'ADMIN')
                             <tr class="bg-blue-50/40">
-                                <form method="POST" action="{{ route('master-stok.store') }}">
+                                <form method="POST" action="{{ route('master-stok.store') }}" enctype="multipart/form-data">
                                     @csrf
                                     <td class="px-8 py-4 text-center text-sm font-black text-slate-400">-</td>
+                                    <td class="px-4 py-4 text-center">
+                                        <label class="cursor-pointer">
+                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-blue-300 bg-blue-50 text-xs text-blue-500">📷</span>
+                                            <input type="file" name="image" accept="image/*" class="hidden">
+                                        </label>
+                                    </td>
                                     <td class="px-8 py-4">
                                         <input name="name" value="{{ old('name') }}" autofocus placeholder="Nama Barang..." class="h-11 w-full rounded border border-blue-300 bg-white px-4 text-sm font-semibold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10">
                                     </td>
@@ -65,10 +72,20 @@
                             @php($isEditing = ($editItem['id'] ?? null) === $item['id'] && $currentUser['role'] === 'ADMIN')
                             <tr class="transition hover:bg-slate-50/80">
                                 @if ($isEditing)
-                                    <form method="POST" action="{{ route('master-stok.update', $item['id']) }}">
+                                    <form method="POST" action="{{ route('master-stok.update', $item['id']) }}" enctype="multipart/form-data">
                                         @csrf
                                         @method('PATCH')
                                         <td class="px-8 py-4 text-center text-sm font-black text-slate-400">{{ ($items->firstItem() ?? 1) + $loop->index }}</td>
+                                        <td class="px-4 py-4 text-center">
+                                            <label class="cursor-pointer">
+                                                @if (!empty($item['image']))
+                                                    <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="h-10 w-10 rounded-lg object-cover border border-blue-300">
+                                                @else
+                                                    <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-dashed border-blue-300 bg-blue-50 text-xs text-blue-500">📷</span>
+                                                @endif
+                                                <input type="file" name="image" accept="image/*" class="hidden">
+                                            </label>
+                                        </td>
                                         <td class="px-8 py-4">
                                             <input name="name" value="{{ old('name', $item['name']) }}" autofocus class="h-11 w-full rounded border border-blue-300 bg-white px-4 text-sm font-semibold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10">
                                         </td>
@@ -92,6 +109,13 @@
                                     </form>
                                 @else
                                     <td class="px-8 py-5 text-center text-sm font-black text-slate-400">{{ ($items->firstItem() ?? 1) + $loop->index }}</td>
+                                    <td class="px-4 py-5 text-center">
+                                        @if (!empty($item['image']))
+                                            <img src="{{ asset('storage/'.$item['image']) }}" alt="{{ $item['name'] }}" class="mx-auto h-10 w-10 rounded-lg object-cover border border-slate-200">
+                                        @else
+                                            <span class="inline-flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-xs text-slate-300">—</span>
+                                        @endif
+                                    </td>
                                     <td class="px-8 py-5 text-base font-black text-slate-950">{{ $item['name'] }}</td>
                                     <td class="px-8 py-5">
                                         <span class="inline-flex rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold uppercase text-slate-700">{{ $item['unit'] }}</span>
@@ -122,7 +146,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-8 py-12 text-center text-sm font-bold text-slate-400">Barang tidak ditemukan.</td>
+                                <td colspan="5" class="px-8 py-12 text-center text-sm font-bold text-slate-400">Barang tidak ditemukan.</td>
                             </tr>
                         @endforelse
                     </tbody>
