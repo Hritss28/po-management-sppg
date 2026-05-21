@@ -31,40 +31,7 @@ class InvoiceController extends Controller
             return redirect()->route('invoices.index', ['tab' => $request->string('tab')->toString() ?: 'pending']);
         }
 
-        $hasQueryParams = $request->has('search') ||
-            $request->has('status') ||
-            $request->has('supplier') ||
-            $request->has('sppg') ||
-            $request->has('date_filter') ||
-            $request->has('date_from') ||
-            $request->has('date_to') ||
-            $request->has('invoice_date') ||
-            $request->has('po_date') ||
-            $request->has('drop_date') ||
-            $request->has('page') ||
-            $request->has('tab');
-
-        if ($hasQueryParams) {
-            $filters = [
-                'tab' => $request->string('tab')->toString() ?: 'pending',
-                'search' => $request->string('search')->toString(),
-                'status' => $request->string('status')->toString() ?: 'all',
-                'supplier' => $request->string('supplier')->toString(),
-                'sppg' => $request->string('sppg')->toString(),
-                'date_filter' => $request->string('date_filter')->toString() ?: 'all',
-                'date_from' => $request->string('date_from')->toString(),
-                'date_to' => $request->string('date_to')->toString(),
-                'invoice_date' => $request->string('invoice_date')->toString(),
-                'po_date' => $request->string('po_date')->toString(),
-                'drop_date' => $request->string('drop_date')->toString(),
-                'page' => $request->string('page')->toString(),
-            ];
-            $request->session()->put('invoice_filters', $filters);
-        } else {
-            if ($request->session()->has('invoice_filters')) {
-                return redirect()->route('invoices.index', $request->session()->get('invoice_filters'));
-            }
-        }
+        // Tidak pakai session filter persistence — langsung pakai query params
 
         $ordersQuery = $this->visibleOrdersQuery();
 
