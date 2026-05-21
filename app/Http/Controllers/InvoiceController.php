@@ -124,7 +124,7 @@ class InvoiceController extends Controller
             ]);
 
         $pendingInvoices = $orders
-            ->filter(fn (PurchaseOrder $order): bool => in_array($order->status, ['COMPLETED', 'INVOICED'], true))
+            ->filter(fn (PurchaseOrder $order): bool => in_array($order->status, ['PROCESSING', 'COMPLETED', 'INVOICED'], true))
             ->flatMap(function (PurchaseOrder $order) use ($publishedKeys): array {
                 return $order->items
                     ->filter(fn (PurchaseOrderItem $item): bool => ! $item->is_invoiced)
