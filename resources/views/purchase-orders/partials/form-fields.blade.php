@@ -200,7 +200,7 @@
                 <td class="px-2 py-2">
                     <div class="flex items-center rounded-md border border-slate-200 bg-slate-50 px-2 py-1.5">
                         <span class="mr-1 text-[9px] font-bold text-slate-400">Rp</span>
-                        <input name="items[${idx}][price]" type="text" inputmode="numeric" value="0" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
+                        <input name="items[${idx}][price]" type="text" inputmode="numeric" data-currency-input value="0" class="min-w-0 flex-1 bg-transparent text-xs font-semibold text-slate-800 outline-none">
                     </div>
                 </td>
                 <td class="px-2 py-2">
@@ -262,7 +262,28 @@
             });
         }
 
+        function recalcTotal() {
+            let sum = 0;
+            tbody.querySelectorAll('tr').forEach(function (row) {
+                const qtyInput = row.querySelector('input[name$="[qty]"]');
+                const priceInput = row.querySelector('input[name$="[price]"]');
+                const qty = parseFloat(qtyInput?.value || 0) || 0;
+                const rawPrice = (priceInput?.value || '0').replace(/[^\d]/g, '');
+                const price = parseInt(rawPrice, 10) || 0;
+                sum += qty * price;
+            });
+            const display = document.getElementById('total-display');
+            if (display) {
+                display.textContent = 'Rp ' + new Intl.NumberFormat('id-ID').format(sum);
+            }
+            const footerCount = document.getElementById('footer-items-count');
+            if (footerCount) {
+                footerCount.textContent = tbody.querySelectorAll('tr').length;
+            }
+        }
+
         updateRowNumbersAndButtons();
+        recalcTotal();
 
         if (btnAdd) {
             btnAdd.addEventListener('click', function () {
@@ -270,6 +291,7 @@
                 tbody.insertAdjacentHTML('beforeend', newRowHtml);
                 itemIndexCounter++;
                 updateRowNumbersAndButtons();
+                recalcTotal();
             });
         }
 
@@ -280,6 +302,7 @@
                 if (tbody.querySelectorAll('tr').length > 1) {
                     tr.remove();
                     updateRowNumbersAndButtons();
+                    recalcTotal();
                 }
             }
         });
@@ -300,6 +323,12 @@
                     if (idInput) idInput.value = '';
                     // unit dibiarkan agar user bisa input manual untuk barang custom
                 }
+            }
+
+            // Recalc total saat qty atau harga berubah
+            const name = e.target.getAttribute('name') || '';
+            if (name.includes('[qty]') || name.includes('[price]')) {
+                recalcTotal();
             }
         });
     });
