@@ -91,6 +91,10 @@
                             <span class="text-right font-black" style="color: {{ $theme }}">Tagihan Pengadaan Barang<br><span class="text-[10px] text-slate-500">(PO: {{ $order['number'] }})</span></span>
                         </div>
                         <div class="flex justify-between border-b border-slate-200 pb-2">
+                            <span class="text-slate-500">Tanggal PO</span>
+                            <span class="font-black text-slate-950">{{ date('n/j/Y', strtotime($order['date'])) }}</span>
+                        </div>
+                        <div class="flex justify-between border-b border-slate-200 pb-2">
                             <span class="text-slate-500">Date</span>
                             <span class="font-black text-slate-950">{{ date('n/j/Y', strtotime($invoice['date'])) }}</span>
                         </div>
