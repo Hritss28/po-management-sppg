@@ -288,6 +288,7 @@
                                     </td>
                                     <td class="px-3 py-3">
                                         @php($invoiceItems = collect($invoice['items'] ?? []))
+                                        @php($hasNonPoItems = $invoiceItems->contains(fn ($item) => empty($item['purchase_order_item_id'])))
                                         @if ($invoiceItems->count() > 0)
                                             <div class="flex flex-wrap items-center gap-1.5">
                                                 <span class="rounded bg-slate-900 px-2 py-0.5 text-[10px] font-bold text-white">{{ $invoiceItems->count() }} item</span>
@@ -296,6 +297,11 @@
                                                     <span class="text-[10px] font-bold text-slate-400">+{{ $invoiceItems->count() - 1 }} lagi</span>
                                                 @endif
                                             </div>
+                                            @if ($hasNonPoItems)
+                                                <p class="mt-1.5 inline-flex items-center gap-1 rounded border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-amber-600">
+                                                    <span>⚠</span> Ada barang di luar PO
+                                                </p>
+                                            @endif
                                         @else
                                             <span class="text-xs font-bold text-slate-400">Belum ada rincian.</span>
                                         @endif
