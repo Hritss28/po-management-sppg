@@ -286,6 +286,7 @@ trait ProcurementHelpers
             'unit' => $item->unit,
             'grade' => $item->grade,
             'price' => $item->price,
+            'buy_price' => (int) $item->buy_price,
             'supplier' => $item->supplier?->name ?? '-',
             'invoiced' => $item->is_invoiced,
             'request' => $item->request_note,
