@@ -6,6 +6,7 @@ use App\Http\Controllers\DeliveryNoteController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\RekapPoController;
 use App\Http\Controllers\SppgController;
 use App\Http\Controllers\StockItemController;
 use Illuminate\Support\Facades\Route;
@@ -28,6 +29,13 @@ Route::delete('/purchase-orders/{id}', [PurchaseOrderController::class, 'destroy
 Route::get('/purchase-orders/{id}/preview', [PurchaseOrderController::class, 'preview'])->name('purchase-orders.preview');
 Route::get('/purchase-orders/{id}', [PurchaseOrderController::class, 'show'])->name('purchase-orders.show');
 Route::get('/purchase-orders/{id}/edit', [PurchaseOrderController::class, 'edit'])->name('purchase-orders.edit');
+
+Route::get('/rekap-po', [RekapPoController::class, 'index'])->name('rekap-po.index');
+Route::get('/rekap-po/{date}/edit', [RekapPoController::class, 'edit'])->name('rekap-po.edit')->where('date', '\d{4}-\d{2}-\d{2}');
+Route::patch('/rekap-po/{date}', [RekapPoController::class, 'update'])->name('rekap-po.update')->where('date', '\d{4}-\d{2}-\d{2}');
+Route::delete('/rekap-po/{date}', [RekapPoController::class, 'destroy'])->name('rekap-po.destroy')->where('date', '\d{4}-\d{2}-\d{2}');
+Route::get('/rekap-po/{date}/preview', [RekapPoController::class, 'preview'])->name('rekap-po.preview')->where('date', '\d{4}-\d{2}-\d{2}');
+Route::get('/rekap-po/{date}', [RekapPoController::class, 'show'])->name('rekap-po.show')->where('date', '\d{4}-\d{2}-\d{2}');
 
 Route::get('/surat-jalan', [DeliveryNoteController::class, 'index'])->name('surat-jalan.index');
 Route::patch('/surat-jalan/{id}', [DeliveryNoteController::class, 'update'])->name('surat-jalan.update');

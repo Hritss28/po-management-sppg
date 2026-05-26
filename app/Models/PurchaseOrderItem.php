@@ -17,6 +17,7 @@ class PurchaseOrderItem extends Model
         'unit',
         'grade',
         'price',
+        'buy_price',
         'request_note',
         'is_invoiced',
     ];
