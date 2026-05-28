@@ -2,11 +2,17 @@
     $menu = [
         ['label' => 'Dashboard', 'route' => 'dashboard', 'icon' => 'dashboard'],
         ['label' => 'Pesanan Pembelian (PO)', 'route' => 'purchase-orders.index', 'icon' => 'file-text'],
-        ['label' => 'Rekap PO', 'route' => 'rekap-po.index', 'icon' => 'trending-up'],
+    ];
+
+    if (($currentUser['role'] ?? null) === 'ADMIN') {
+        $menu[] = ['label' => 'Rekap PO', 'route' => 'rekap-po.index', 'icon' => 'trending-up'];
+    }
+
+    $menu = array_merge($menu, [
         ['label' => 'Surat Jalan', 'route' => 'surat-jalan.index', 'icon' => 'box'],
         ['label' => 'Invoice', 'route' => 'invoices.index', 'icon' => 'users'],
         ['label' => 'Master Stok', 'route' => 'master-stok.index', 'icon' => 'database'],
-    ];
+    ]);
 
     if (($currentUser['role'] ?? null) === 'ADMIN') {
         $menu[] = ['label' => 'Master SPPG', 'route' => 'master-sppg.index', 'icon' => 'building'];

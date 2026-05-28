@@ -22,6 +22,8 @@ class RekapPoController extends Controller
             return $redirect;
         }
 
+        $this->authorizeAdmin();
+
         if ($request->has('clear')) {
             $request->session()->forget('rekap_po_filters');
 
@@ -135,6 +137,8 @@ class RekapPoController extends Controller
             return $redirect;
         }
 
+        $this->authorizeAdmin();
+
         $orders = $this->ordersForDate($date);
 
         return view('rekap-po.show', [
@@ -239,6 +243,8 @@ class RekapPoController extends Controller
         if ($redirect = $this->requireAuth()) {
             return $redirect;
         }
+
+        $this->authorizeAdmin();
 
         $orders = $this->ordersForDate($date);
 
